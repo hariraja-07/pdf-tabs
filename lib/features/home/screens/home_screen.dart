@@ -1,10 +1,9 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:file_picker/file_picker.dart';
 
-import '../../pdf_viewer/screens/pdf_viewer_screen.dart';
-
-final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.system);
+import '../../../core/theme/app_theme.dart';
+import '../../tabs/pdf_tabs_provider.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -28,51 +27,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
       if (result != null && result.files.single.path != null) {
         if (!mounted) return;
-        final path = result.files.single.path!;
-        final name = result.files.single.name;
-
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => PdfViewerScreen(filePath: path, fileName: name),
-          ),
-        );
+        await ref.read(pdfTabsProvider.notifier).open(result.files.single.path!);
       }
     } finally {
       if (mounted) setState(() => _isPicking = false);
     }
   }
 
-  void _toggleTheme() {
-    final current = ref.read(themeModeProvider);
-    final next = switch (current) {
-      ThemeMode.light => ThemeMode.dark,
-      ThemeMode.dark => ThemeMode.system,
-      ThemeMode.system => ThemeMode.light,
-    };
-    ref.read(themeModeProvider.notifier).state = next;
-  }
-
-  IconData _themeIcon(ThemeMode mode) => switch (mode) {
-    ThemeMode.light => Icons.light_mode,
-    ThemeMode.dark => Icons.dark_mode,
-    ThemeMode.system => Icons.brightness_auto,
-  };
-
   @override
   Widget build(BuildContext context) {
-    final themeMode = ref.watch(themeModeProvider);
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('PdfTabs'),
-        actions: [
-          IconButton(
-            icon: Icon(_themeIcon(themeMode)),
-            onPressed: _toggleTheme,
-            tooltip: 'Toggle theme',
-          ),
-        ],
+        actions: const [ThemeToggleButton()],
       ),
       body: Center(
         child: Padding(

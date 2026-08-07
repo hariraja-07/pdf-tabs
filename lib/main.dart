@@ -6,8 +6,8 @@ import 'package:pdfrx/pdfrx.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 
 import 'core/theme/app_theme.dart';
-import 'features/home/screens/home_screen.dart';
-import 'features/pdf_viewer/screens/pdf_viewer_screen.dart';
+import 'features/tabs/pdf_tabs_provider.dart';
+import 'features/tabs/screens/pdf_tabs_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,7 +23,6 @@ class PdfTabsApp extends ConsumerStatefulWidget {
 }
 
 class _PdfTabsAppState extends ConsumerState<PdfTabsApp> {
-  final _navigatorKey = GlobalKey<NavigatorState>();
   StreamSubscription<List<SharedMediaFile>>? _mediaSubscription;
 
   @override
@@ -46,19 +45,11 @@ class _PdfTabsAppState extends ConsumerState<PdfTabsApp> {
   }
 
   void _openSharedFiles(List<SharedMediaFile> files) {
-    final navigator = _navigatorKey.currentState;
-    if (navigator == null) return;
-
     for (final file in files) {
       final path = file.path;
       if (path.isEmpty || !path.toLowerCase().endsWith('.pdf')) continue;
 
-      final name = path.split('/').last;
-      navigator.push(
-        MaterialPageRoute(
-          builder: (_) => PdfViewerScreen(filePath: path, fileName: name),
-        ),
-      );
+      ref.read(pdfTabsProvider.notifier).open(path);
       return;
     }
   }
@@ -70,11 +61,10 @@ class _PdfTabsAppState extends ConsumerState<PdfTabsApp> {
     return MaterialApp(
       title: 'PdfTabs',
       debugShowCheckedModeBanner: false,
-      navigatorKey: _navigatorKey,
       theme: AppTheme.lightTheme(),
       darkTheme: AppTheme.darkTheme(),
       themeMode: themeMode,
-      home: const HomeScreen(),
+      home: const PdfTabsScreen(),
     );
   }
 }

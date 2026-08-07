@@ -1,21 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
 
-class PdfViewerScreen extends StatefulWidget {
-  final String filePath;
-  final String fileName;
+class PdfDocumentView extends StatefulWidget {
+  const PdfDocumentView({super.key, required this.filePath});
 
-  const PdfViewerScreen({
-    super.key,
-    required this.filePath,
-    required this.fileName,
-  });
+  final String filePath;
 
   @override
-  State<PdfViewerScreen> createState() => _PdfViewerScreenState();
+  State<PdfDocumentView> createState() => PdfDocumentViewState();
 }
 
-class _PdfViewerScreenState extends State<PdfViewerScreen> {
+class PdfDocumentViewState extends State<PdfDocumentView> {
   final _pdfController = PdfViewerController();
   PdfTextSearcher? _searcher;
   bool _isSearchOpen = false;
@@ -30,6 +25,18 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     super.dispose();
   }
 
+  void toggleSearch() {
+    setState(() {
+      _isSearchOpen = !_isSearchOpen;
+      if (!_isSearchOpen) {
+        _searchController.clear();
+        _searcher?.resetTextSearch();
+        _currentMatchIndex = 0;
+        _totalMatches = 0;
+      }
+    });
+  }
+
   void _initSearcher() {
     if (_searcher != null) return;
     _searcher = PdfTextSearcher(_pdfController);
@@ -39,18 +46,6 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
           _totalMatches = _searcher!.matches.length;
           _currentMatchIndex = _searcher!.currentIndex ?? 0;
         });
-      }
-    });
-  }
-
-  void _toggleSearch() {
-    setState(() {
-      _isSearchOpen = !_isSearchOpen;
-      if (!_isSearchOpen) {
-        _searchController.clear();
-        _searcher?.resetTextSearch();
-        _currentMatchIndex = 0;
-        _totalMatches = 0;
       }
     });
   }
@@ -77,60 +72,39 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Text(
-          widget.fileName,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontSize: 16),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(_isSearchOpen ? Icons.close : Icons.search),
-            onPressed: _toggleSearch,
-            tooltip: 'Search',
+    return Column(
+      children: [
+        if (_isSearchOpen)
+          _SearchBar(
+            controller: _searchController,
+            onChanged: _onSearchChanged,
+            onNext: _nextMatch,
+            onPrevious: _previousMatch,
+            currentMatch: _currentMatchIndex,
+            totalMatches: _totalMatches,
           ),
-        ],
-      ),
-      body: Column(
-        children: [
-          if (_isSearchOpen)
-            _SearchBar(
-              controller: _searchController,
-              onChanged: _onSearchChanged,
-              onNext: _nextMatch,
-              onPrevious: _previousMatch,
-              currentMatch: _currentMatchIndex,
-              totalMatches: _totalMatches,
-            ),
-          Expanded(
-            child: PdfViewer.file(
-              widget.filePath,
-              controller: _pdfController,
-              params: PdfViewerParams(
-                margin: 8.0,
-                textSelectionParams: const PdfTextSelectionParams(
-                  enabled: true,
-                ),
-                matchTextColor: Colors.yellow.withAlpha(127),
-                activeMatchTextColor: Colors.orange.withAlpha(127),
-                pagePaintCallbacks: [
-                  if (_searcher != null)
-                    _searcher!.pageTextMatchPaintCallback,
-                ],
-                onViewerReady: (document, controller) {
-                  _initSearcher();
-                },
+        Expanded(
+          child: PdfViewer.file(
+            widget.filePath,
+            controller: _pdfController,
+            params: PdfViewerParams(
+              margin: 8.0,
+              textSelectionParams: const PdfTextSelectionParams(
+                enabled: true,
               ),
+              matchTextColor: Colors.yellow.withAlpha(127),
+              activeMatchTextColor: Colors.orange.withAlpha(127),
+              pagePaintCallbacks: [
+                if (_searcher != null)
+                  _searcher!.pageTextMatchPaintCallback,
+              ],
+              onViewerReady: (document, controller) {
+                _initSearcher();
+              },
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
