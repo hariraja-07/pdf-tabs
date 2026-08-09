@@ -44,13 +44,12 @@ class _PdfTabsAppState extends ConsumerState<PdfTabsApp> {
     if (files.isNotEmpty) _openSharedFiles(files);
   }
 
-  void _openSharedFiles(List<SharedMediaFile> files) {
+  Future<void> _openSharedFiles(List<SharedMediaFile> files) async {
     for (final file in files) {
       final path = file.path;
       if (path.isEmpty || !path.toLowerCase().endsWith('.pdf')) continue;
 
-      ref.read(pdfTabsProvider.notifier).open(path);
-      return;
+      await ref.read(pdfTabsProvider.notifier).open(path);
     }
   }
 
