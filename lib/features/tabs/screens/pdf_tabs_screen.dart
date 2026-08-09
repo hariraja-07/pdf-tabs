@@ -51,7 +51,10 @@ class _PdfTabsScreenState extends ConsumerState<PdfTabsScreen> {
       loading: () => const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       ),
-      error: (_, _) => const HomeScreen(),
+      error: (error, _) => _ErrorScreen(
+        message: '$error',
+        onRetry: () => ref.invalidate(pdfTabsProvider),
+      ),
       data: (state) {
         if (state.tabs.isEmpty) return const HomeScreen();
         return _buildTabbed(context, state);
@@ -163,8 +166,62 @@ class _TabStrip extends StatelessWidget {
   }
 }
 
-class _TabChip extends StatelessWidget {
-  final PdfTabData tab;
+class _ErrorScreen extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+
+  const _ErrorScreen({required this.message, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Pdf Tabs'),
+        actions: const [ThemeToggleButton()],
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 64,
+                color: colorScheme.error,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Something went wrong',
+                style: textTheme.titleMedium,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                message,
+                style: textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              FilledButton.icon(
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TabChip extends StatelessWidget {  final PdfTabData tab;
   final bool active;
   final VoidCallback onTap;
   final VoidCallback onClose;

@@ -17,6 +17,7 @@ class PdfDocumentViewState extends State<PdfDocumentView> {
   final _searchController = TextEditingController();
   int _currentMatchIndex = 0;
   int _totalMatches = 0;
+  int _reloadKey = 0;
 
   @override
   void dispose() {
@@ -86,6 +87,7 @@ class PdfDocumentViewState extends State<PdfDocumentView> {
         Expanded(
           child: PdfViewer.file(
             widget.filePath,
+            key: ValueKey(_reloadKey),
             controller: _pdfController,
             params: PdfViewerParams(
               margin: 8.0,
@@ -94,6 +96,10 @@ class PdfDocumentViewState extends State<PdfDocumentView> {
               ),
               matchTextColor: Colors.yellow.withAlpha(127),
               activeMatchTextColor: Colors.orange.withAlpha(127),
+              errorBannerBuilder: (context, error, _, _) => _LoadErrorView(
+                message: '$error',
+                onRetry: () => setState(() => _reloadKey++),
+              ),
               pagePaintCallbacks: [
                 if (_searcher != null)
                   _searcher!.pageTextMatchPaintCallback,
@@ -180,6 +186,51 @@ class _SearchBar extends StatelessWidget {
             visualDensity: VisualDensity.compact,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _LoadErrorView extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+
+  const _LoadErrorView({required this.message, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.error_outline, size: 64, color: colorScheme.error),
+            const SizedBox(height: 16),
+            Text(
+              'Could not open PDF',
+              style: textTheme.titleMedium,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              style: textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry'),
+            ),
+          ],
+        ),
       ),
     );
   }
