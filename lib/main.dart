@@ -59,7 +59,7 @@ class _PdfTabsAppState extends ConsumerState<PdfTabsApp> {
     final themeMode = ref.watch(themeModeProvider);
 
     return MaterialApp(
-      title: 'PdfTabs',
+      title: 'Pdf Tabs',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme(),
       darkTheme: AppTheme.darkTheme(),

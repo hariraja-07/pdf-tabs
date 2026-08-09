@@ -13,7 +13,7 @@ void main() {
     await tester.pumpWidget(const ProviderScope(child: PdfTabsApp()));
     await tester.pumpAndSettle();
 
-    expect(find.text('PdfTabs'), findsOneWidget);
+    expect(find.text('Pdf Tabs'), findsOneWidget);
     expect(find.text('Pick PDF'), findsOneWidget);
   });
 }

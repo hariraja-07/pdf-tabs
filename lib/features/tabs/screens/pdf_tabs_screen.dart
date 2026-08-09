@@ -62,7 +62,7 @@ class _PdfTabsScreenState extends ConsumerState<PdfTabsScreen> {
   Widget _buildTabbed(BuildContext context, PdfTabsState state) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('PdfTabs'),
+        title: const Text('Pdf Tabs'),
         actions: [
           IconButton(
             icon: const Icon(Icons.search),

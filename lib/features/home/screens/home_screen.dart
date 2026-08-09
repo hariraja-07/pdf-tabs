@@ -40,7 +40,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('PdfTabs'),
+        title: const Text('Pdf Tabs'),
         actions: const [ThemeToggleButton()],
       ),
       body: Center(
