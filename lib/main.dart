@@ -55,7 +55,7 @@ class _PdfTabsAppState extends ConsumerState<PdfTabsApp> {
 
   @override
   Widget build(BuildContext context) {
-    final themeMode = ref.watch(themeModeProvider);
+    final themeMode = ref.watch(themeModeProvider).valueOrNull ?? ThemeMode.system;
 
     return MaterialApp(
       title: 'Pdf Tabs',
