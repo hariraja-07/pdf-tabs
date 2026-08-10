@@ -23,6 +23,27 @@ class _PdfTabsScreenState extends ConsumerState<PdfTabsScreen> {
     _docKeys[activeTab.id]?.currentState?.toggleSearch();
   }
 
+  Future<void> _closeTab(PdfTabsState state, String id) async {
+    final tab = state.tabs.firstWhere((element) => element.id == id);
+    _docKeys.remove(id);
+    await ref.read(pdfTabsProvider.notifier).close(id);
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text('${tab.fileName} closed'),
+          action: SnackBarAction(
+            label: 'Undo',
+            onPressed: () {
+              ref.read(pdfTabsProvider.notifier).open(tab.filePath);
+            },
+          ),
+        ),
+      );
+  }
+
   @override
   Widget build(BuildContext context) {
     final tabsAsync = ref.watch(pdfTabsProvider);
@@ -65,10 +86,7 @@ class _PdfTabsScreenState extends ConsumerState<PdfTabsScreen> {
             isPicking: isPicking,
             onActivate: (id) =>
                 ref.read(pdfTabsProvider.notifier).activate(id),
-            onClose: (id) {
-              _docKeys.remove(id);
-              ref.read(pdfTabsProvider.notifier).close(id);
-            },
+            onClose: (id) => _closeTab(state, id),
             onAdd: () => PdfOpener.pickAndOpen(ref),
           ),
           Expanded(
