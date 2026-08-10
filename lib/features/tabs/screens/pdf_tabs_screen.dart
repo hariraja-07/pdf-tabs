@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../home/screens/home_screen.dart';
 import '../../pdf_viewer/widgets/pdf_document_view.dart';
 import '../pdf_opener.dart';
@@ -35,9 +36,11 @@ class _PdfTabsScreenState extends ConsumerState<PdfTabsScreen> {
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          content: Text('${tab.fileName} closed'),
+          content: Text(
+            AppLocalizations.of(context).tabClosed(tab.fileName),
+          ),
           action: SnackBarAction(
-            label: 'Undo',
+            label: AppLocalizations.of(context).undo,
             onPressed: () {
               ref.read(pdfTabsProvider.notifier).open(tab.filePath);
             },
@@ -86,12 +89,12 @@ class _PdfTabsScreenState extends ConsumerState<PdfTabsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pdf Tabs'),
+        title: Text(AppLocalizations.of(context).appTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
             onPressed: () => _toggleSearch(state),
-            tooltip: 'Search',
+            tooltip: AppLocalizations.of(context).search,
           ),
           const ThemeToggleButton(),
         ],
@@ -160,7 +163,7 @@ class _TabStrip extends StatelessWidget {
             padding: const EdgeInsets.only(left: 4),
             child: IconButton.filledTonal(
               onPressed: isPicking ? null : onAdd,
-              tooltip: 'Open PDF',
+              tooltip: AppLocalizations.of(context).openPdfTooltip,
               visualDensity: VisualDensity.compact,
               icon: isPicking
                   ? const SizedBox(
@@ -187,10 +190,11 @@ class _ErrorScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pdf Tabs'),
+        title: Text(l10n.appTitle),
         actions: const [ThemeToggleButton()],
       ),
       body: Center(
@@ -206,7 +210,7 @@ class _ErrorScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'Something went wrong',
+                l10n.somethingWentWrong,
                 style: textTheme.titleMedium,
                 textAlign: TextAlign.center,
               ),
@@ -222,7 +226,7 @@ class _ErrorScreen extends StatelessWidget {
               FilledButton.icon(
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh),
-                label: const Text('Retry'),
+                label: Text(l10n.retry),
               ),
             ],
           ),
@@ -283,7 +287,7 @@ class _TabChip extends StatelessWidget {  final PdfTabData tab;
                   icon: const Icon(Icons.close, size: 16),
                   color: foreground,
                   onPressed: onClose,
-                  tooltip: 'Close tab',
+                  tooltip: AppLocalizations.of(context).closeTab,
                   visualDensity: VisualDensity.compact,
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(

@@ -1,0 +1,41 @@
+{
+  "@@locale": "en",
+  "appTitle": "Pdf Tabs",
+  "openPdfToStartReading": "Open a PDF to start reading",
+  "pickPdf": "Pick PDF",
+  "openPdfTooltip": "Open PDF",
+  "search": "Search",
+  "searchInPdf": "Search in PDF...",
+  "previousMatch": "Previous match",
+  "nextMatch": "Next match",
+  "closeTab": "Close tab",
+  "toggleTheme": "Toggle theme",
+  "somethingWentWrong": "Something went wrong",
+  "retry": "Retry",
+  "couldNotOpenPdf": "Could not open PDF",
+  "tabClosed": "{fileName} closed",
+  "@tabClosed": {
+    "placeholders": {
+      "fileName": {
+        "type": "String"
+      }
+    }
+  },
+  "undo": "Undo",
+  "goToPage": "Go to page",
+  "pageRange": "Pages: {min} - {max}",
+  "@pageRange": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "cancel": "Cancel",
+  "go": "Go",
+  "previousPage": "Previous page",
+  "nextPage": "Next page"
+}

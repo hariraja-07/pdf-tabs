@@ -8,6 +8,7 @@ import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 import 'core/theme/app_theme.dart';
 import 'features/tabs/pdf_tabs_provider.dart';
 import 'features/tabs/screens/pdf_tabs_screen.dart';
+import 'l10n/app_localizations.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -69,11 +70,13 @@ class _PdfTabsAppState extends ConsumerState<PdfTabsApp> {
     final themeMode = ref.watch(themeModeProvider).valueOrNull ?? ThemeMode.system;
 
     return MaterialApp(
-      title: 'Pdf Tabs',
+      onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme(),
       darkTheme: AppTheme.darkTheme(),
       themeMode: themeMode,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: const PdfTabsScreen(),
     );
   }

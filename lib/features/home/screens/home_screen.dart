@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../tabs/pdf_opener.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -16,10 +17,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final isPicking = ref.watch(isPickingProvider);
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pdf Tabs'),
+        title: Text(l10n.appTitle),
         actions: const [ThemeToggleButton()],
       ),
       body: Center(
@@ -35,7 +37,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
               const SizedBox(height: 24),
               Text(
-                'Open a PDF to start reading',
+                l10n.openPdfToStartReading,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                 ),
@@ -50,7 +52,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.file_open),
-                label: const Text('Pick PDF'),
+                label: Text(l10n.pickPdf),
               ),
             ],
           ),
@@ -58,7 +60,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: isPicking ? null : () => PdfOpener.pickAndOpen(ref),
-        tooltip: 'Open PDF',
+        tooltip: l10n.openPdfTooltip,
         child: isPicking
             ? const CircularProgressIndicator(
                 strokeWidth: 2,

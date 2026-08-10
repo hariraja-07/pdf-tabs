@@ -7,6 +7,7 @@ import 'package:pdf_tabs/core/theme/app_theme.dart';
 import 'package:pdf_tabs/features/tabs/pdf_tab.dart';
 import 'package:pdf_tabs/features/tabs/pdf_tabs_provider.dart';
 import 'package:pdf_tabs/features/tabs/screens/pdf_tabs_screen.dart';
+import 'package:pdf_tabs/l10n/app_localizations.dart';
 
 class _FailingTabsNotifier extends PdfTabsNotifier {
   @override
@@ -20,7 +21,11 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  Widget wrap(Widget child) => MaterialApp(home: child);
+  Widget wrap(Widget child) => MaterialApp(
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+    home: child,
+  );
 
   testWidgets('shows home screen when no tabs are open', (tester) async {
     final container = ProviderContainer();
@@ -105,6 +110,8 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             appBar: AppBar(actions: const [ThemeToggleButton()]),
           ),

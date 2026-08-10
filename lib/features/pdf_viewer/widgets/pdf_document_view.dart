@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
 
+import '../../../l10n/app_localizations.dart';
+
 class PdfDocumentView extends StatefulWidget {
   const PdfDocumentView({
     super.key,
@@ -101,17 +103,18 @@ class PdfDocumentViewState extends State<PdfDocumentView> {
     if (pageCount == null) return;
 
     final controller = TextEditingController(text: '$current');
+    final l10n = AppLocalizations.of(context);
     final result = await showDialog<int>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Go to page'),
+          title: Text(l10n.goToPage),
           content: TextField(
             controller: controller,
             autofocus: true,
             keyboardType: TextInputType.number,
             decoration: InputDecoration(
-              helperText: 'Pages: 1 - $pageCount',
+              helperText: l10n.pageRange(1, pageCount),
             ),
             onSubmitted: (value) {
               final page = int.tryParse(value);
@@ -123,7 +126,7 @@ class PdfDocumentViewState extends State<PdfDocumentView> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Cancel'),
+              child: Text(l10n.cancel),
             ),
             FilledButton(
               onPressed: () {
@@ -132,7 +135,7 @@ class PdfDocumentViewState extends State<PdfDocumentView> {
                   Navigator.of(dialogContext).pop(page);
                 }
               },
-              child: const Text('Go'),
+              child: Text(l10n.go),
             ),
           ],
         );
@@ -236,6 +239,7 @@ class _SearchBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -248,7 +252,7 @@ class _SearchBar extends StatelessWidget {
               onChanged: onChanged,
               autofocus: true,
               decoration: InputDecoration(
-                hintText: 'Search in PDF...',
+                hintText: l10n.searchInPdf,
                 prefixIcon: const Icon(Icons.search, size: 20),
                 isDense: true,
                 contentPadding: const EdgeInsets.symmetric(
@@ -277,13 +281,13 @@ class _SearchBar extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.keyboard_arrow_up, size: 20),
             onPressed: totalMatches > 0 ? onPrevious : null,
-            tooltip: 'Previous match',
+            tooltip: l10n.previousMatch,
             visualDensity: VisualDensity.compact,
           ),
           IconButton(
             icon: const Icon(Icons.keyboard_arrow_down, size: 20),
             onPressed: totalMatches > 0 ? onNext : null,
-            tooltip: 'Next match',
+            tooltip: l10n.nextMatch,
             visualDensity: VisualDensity.compact,
           ),
         ],
@@ -310,6 +314,7 @@ class _PageNavigationBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context);
 
     return Container(
       height: 48,
@@ -319,7 +324,7 @@ class _PageNavigationBar extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.chevron_left),
             onPressed: currentPage > 1 ? onPrevious : null,
-            tooltip: 'Previous page',
+            tooltip: l10n.previousPage,
           ),
           Expanded(
             child: InkWell(
@@ -336,7 +341,7 @@ class _PageNavigationBar extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.chevron_right),
             onPressed: currentPage < pageCount ? onNext : null,
-            tooltip: 'Next page',
+            tooltip: l10n.nextPage,
           ),
         ],
       ),
@@ -354,6 +359,7 @@ class _LoadErrorView extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
 
     return Center(
       child: Padding(
@@ -364,7 +370,7 @@ class _LoadErrorView extends StatelessWidget {
             Icon(Icons.error_outline, size: 64, color: colorScheme.error),
             const SizedBox(height: 16),
             Text(
-              'Could not open PDF',
+              l10n.couldNotOpenPdf,
               style: textTheme.titleMedium,
               textAlign: TextAlign.center,
             ),
@@ -380,7 +386,7 @@ class _LoadErrorView extends StatelessWidget {
             FilledButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
+              label: Text(l10n.retry),
             ),
           ],
         ),

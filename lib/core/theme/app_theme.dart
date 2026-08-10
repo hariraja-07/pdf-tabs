@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../l10n/app_localizations.dart';
+
 final themeModeProvider = AsyncNotifierProvider<ThemeModeNotifier, ThemeMode>(
   ThemeModeNotifier.new,
 );
@@ -51,7 +53,7 @@ class ThemeToggleButton extends ConsumerWidget {
     return IconButton(
       icon: Icon(_icon(mode)),
       onPressed: () => _toggle(ref),
-      tooltip: 'Toggle theme',
+      tooltip: AppLocalizations.of(context).toggleTheme,
     );
   }
 }
