@@ -9,7 +9,9 @@ import '../pdf_tab.dart';
 import '../pdf_tabs_provider.dart';
 
 class PdfTabsScreen extends ConsumerStatefulWidget {
-  const PdfTabsScreen({super.key});
+  const PdfTabsScreen({super.key, this.documentBuilder});
+
+  final Widget Function(BuildContext context, PdfTabData tab)? documentBuilder;
 
   @override
   ConsumerState<PdfTabsScreen> createState() => _PdfTabsScreenState();
@@ -42,6 +44,22 @@ class _PdfTabsScreenState extends ConsumerState<PdfTabsScreen> {
           ),
         ),
       );
+  }
+
+  Widget _buildDocument(BuildContext context, PdfTabData tab) {
+    final builder = widget.documentBuilder;
+    if (builder != null) return builder(context, tab);
+
+    return PdfDocumentView(
+      key: _docKeys.putIfAbsent(
+        tab.id,
+        () => GlobalKey<PdfDocumentViewState>(),
+      ),
+      filePath: tab.filePath,
+      initialPageIndex: tab.pageIndex,
+      onPageChanged: (pageIndex) =>
+          ref.read(pdfTabsProvider.notifier).setPosition(tab.id, pageIndex),
+    );
   }
 
   @override
@@ -93,18 +111,7 @@ class _PdfTabsScreenState extends ConsumerState<PdfTabsScreen> {
             child: IndexedStack(
               index: state.activeIndex,
               children: [
-                for (final tab in state.tabs)
-                  PdfDocumentView(
-                    key: _docKeys.putIfAbsent(
-                      tab.id,
-                      () => GlobalKey<PdfDocumentViewState>(),
-                    ),
-                    filePath: tab.filePath,
-                    initialPageIndex: tab.pageIndex,
-                    onPageChanged: (pageIndex) => ref
-                        .read(pdfTabsProvider.notifier)
-                        .setPosition(tab.id, pageIndex),
-                  ),
+                for (final tab in state.tabs) _buildDocument(context, tab),
               ],
             ),
           ),
