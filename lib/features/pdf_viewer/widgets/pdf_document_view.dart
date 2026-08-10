@@ -25,6 +25,8 @@ class PdfDocumentViewState extends State<PdfDocumentView> {
   int _currentMatchIndex = 0;
   int _totalMatches = 0;
   int _reloadKey = 0;
+  int? _currentPageNumber;
+  int? _pageCount;
 
   @override
   void dispose() {
@@ -78,6 +80,70 @@ class PdfDocumentViewState extends State<PdfDocumentView> {
     _searcher?.goToPrevMatch();
   }
 
+  void _goToPreviousPage() {
+    final pageNumber = _currentPageNumber;
+    if (pageNumber == null || pageNumber <= 1) return;
+    _pdfController.goToPage(pageNumber: pageNumber - 1);
+  }
+
+  void _goToNextPage() {
+    final pageNumber = _currentPageNumber;
+    final pageCount = _pageCount;
+    if (pageNumber == null || pageCount == null || pageNumber >= pageCount) {
+      return;
+    }
+    _pdfController.goToPage(pageNumber: pageNumber + 1);
+  }
+
+  Future<void> _jumpToPage() async {
+    final pageCount = _pageCount;
+    final current = _currentPageNumber ?? 1;
+    if (pageCount == null) return;
+
+    final controller = TextEditingController(text: '$current');
+    final result = await showDialog<int>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Go to page'),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(
+              helperText: 'Pages: 1 - $pageCount',
+            ),
+            onSubmitted: (value) {
+              final page = int.tryParse(value);
+              if (page != null && page >= 1 && page <= pageCount) {
+                Navigator.of(dialogContext).pop(page);
+              }
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final page = int.tryParse(controller.text);
+                if (page != null && page >= 1 && page <= pageCount) {
+                  Navigator.of(dialogContext).pop(page);
+                }
+              },
+              child: const Text('Go'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result != null && mounted) {
+      await _pdfController.goToPage(pageNumber: result);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -108,8 +174,11 @@ class PdfDocumentViewState extends State<PdfDocumentView> {
                 onRetry: () => setState(() => _reloadKey++),
               ),
               onPageChanged: (pageNumber) {
-                if (!mounted || pageNumber == null) return;
-                widget.onPageChanged?.call(pageNumber - 1);
+                if (!mounted) return;
+                setState(() => _currentPageNumber = pageNumber);
+                if (pageNumber != null) {
+                  widget.onPageChanged?.call(pageNumber - 1);
+                }
               },
               pagePaintCallbacks: [
                 if (_searcher != null)
@@ -117,6 +186,10 @@ class PdfDocumentViewState extends State<PdfDocumentView> {
               ],
               onViewerReady: (document, controller) {
                 _initSearcher();
+                setState(() {
+                  _pageCount = controller.pageCount;
+                  _currentPageNumber = controller.pageNumber;
+                });
                 final initial = widget.initialPageIndex;
                 if (initial > 0 &&
                     controller.isReady &&
@@ -130,6 +203,14 @@ class PdfDocumentViewState extends State<PdfDocumentView> {
             ),
           ),
         ),
+        if (_pageCount != null)
+          _PageNavigationBar(
+            currentPage: _currentPageNumber ?? 1,
+            pageCount: _pageCount!,
+            onPrevious: _goToPreviousPage,
+            onNext: _goToNextPage,
+            onJump: _jumpToPage,
+          ),
       ],
     );
   }
@@ -204,6 +285,58 @@ class _SearchBar extends StatelessWidget {
             onPressed: totalMatches > 0 ? onNext : null,
             tooltip: 'Next match',
             visualDensity: VisualDensity.compact,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PageNavigationBar extends StatelessWidget {
+  final int currentPage;
+  final int pageCount;
+  final VoidCallback onPrevious;
+  final VoidCallback onNext;
+  final VoidCallback onJump;
+
+  const _PageNavigationBar({
+    required this.currentPage,
+    required this.pageCount,
+    required this.onPrevious,
+    required this.onNext,
+    required this.onJump,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      height: 48,
+      color: colorScheme.surfaceContainerHighest,
+      child: Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.chevron_left),
+            onPressed: currentPage > 1 ? onPrevious : null,
+            tooltip: 'Previous page',
+          ),
+          Expanded(
+            child: InkWell(
+              onTap: onJump,
+              borderRadius: BorderRadius.circular(8),
+              child: Center(
+                child: Text(
+                  '$currentPage / $pageCount',
+                  style: const TextStyle(fontSize: 14),
+                ),
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.chevron_right),
+            onPressed: currentPage < pageCount ? onNext : null,
+            tooltip: 'Next page',
           ),
         ],
       ),
