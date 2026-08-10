@@ -1,9 +1,8 @@
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_theme.dart';
-import '../../tabs/pdf_tabs_provider.dart';
+import '../../tabs/pdf_opener.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -13,30 +12,10 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  bool _isPicking = false;
-
-  Future<void> _pickPdf() async {
-    if (_isPicking) return;
-    setState(() => _isPicking = true);
-
-    try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['pdf'],
-      );
-
-      if (result != null && result.files.single.path != null) {
-        if (!mounted) return;
-        await ref.read(pdfTabsProvider.notifier).open(result.files.single.path!);
-      }
-    } finally {
-      if (mounted) setState(() => _isPicking = false);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isPicking = ref.watch(isPickingProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -63,8 +42,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
               const SizedBox(height: 32),
               FilledButton.icon(
-                onPressed: _isPicking ? null : _pickPdf,
-                icon: _isPicking
+                onPressed: isPicking ? null : () => PdfOpener.pickAndOpen(ref),
+                icon: isPicking
                     ? const SizedBox(
                         width: 20,
                         height: 20,
@@ -78,9 +57,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _isPicking ? null : _pickPdf,
+        onPressed: isPicking ? null : () => PdfOpener.pickAndOpen(ref),
         tooltip: 'Open PDF',
-        child: _isPicking
+        child: isPicking
             ? const CircularProgressIndicator(
                 strokeWidth: 2,
                 color: Colors.white,

@@ -1,10 +1,10 @@
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../home/screens/home_screen.dart';
 import '../../pdf_viewer/widgets/pdf_document_view.dart';
+import '../pdf_opener.dart';
 import '../pdf_tab.dart';
 import '../pdf_tabs_provider.dart';
 
@@ -16,31 +16,11 @@ class PdfTabsScreen extends ConsumerStatefulWidget {
 }
 
 class _PdfTabsScreenState extends ConsumerState<PdfTabsScreen> {
-  bool _isPicking = false;
   final Map<String, GlobalKey<PdfDocumentViewState>> _docKeys = {};
 
   void _toggleSearch(PdfTabsState state) {
     final activeTab = state.tabs[state.activeIndex];
     _docKeys[activeTab.id]?.currentState?.toggleSearch();
-  }
-
-  Future<void> _pickPdf() async {
-    if (_isPicking) return;
-    setState(() => _isPicking = true);
-
-    try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['pdf'],
-      );
-
-      if (result != null && result.files.single.path != null) {
-        if (!mounted) return;
-        await ref.read(pdfTabsProvider.notifier).open(result.files.single.path!);
-      }
-    } finally {
-      if (mounted) setState(() => _isPicking = false);
-    }
   }
 
   @override
@@ -63,6 +43,8 @@ class _PdfTabsScreenState extends ConsumerState<PdfTabsScreen> {
   }
 
   Widget _buildTabbed(BuildContext context, PdfTabsState state) {
+    final isPicking = ref.watch(isPickingProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Pdf Tabs'),
@@ -80,14 +62,14 @@ class _PdfTabsScreenState extends ConsumerState<PdfTabsScreen> {
           _TabStrip(
             tabs: state.tabs,
             activeIndex: state.activeIndex,
-            isPicking: _isPicking,
+            isPicking: isPicking,
             onActivate: (id) =>
                 ref.read(pdfTabsProvider.notifier).activate(id),
             onClose: (id) {
               _docKeys.remove(id);
               ref.read(pdfTabsProvider.notifier).close(id);
             },
-            onAdd: _pickPdf,
+            onAdd: () => PdfOpener.pickAndOpen(ref),
           ),
           Expanded(
             child: IndexedStack(
