@@ -24,10 +24,16 @@ class PdfTabsApp extends ConsumerStatefulWidget {
 
 class _PdfTabsAppState extends ConsumerState<PdfTabsApp> {
   StreamSubscription<List<SharedMediaFile>>? _mediaSubscription;
+  late final AppLifecycleListener _lifecycleListener;
 
   @override
   void initState() {
     super.initState();
+    _lifecycleListener = AppLifecycleListener(
+      onPause: _persistTabs,
+      onHide: _persistTabs,
+      onDetach: _persistTabs,
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) => _handleInitialMedia());
     _mediaSubscription =
         ReceiveSharingIntent.instance.getMediaStream().listen(_openSharedFiles);
@@ -35,8 +41,13 @@ class _PdfTabsAppState extends ConsumerState<PdfTabsApp> {
 
   @override
   void dispose() {
+    _lifecycleListener.dispose();
     _mediaSubscription?.cancel();
     super.dispose();
+  }
+
+  void _persistTabs() {
+    ref.read(pdfTabsProvider.notifier).persist();
   }
 
   Future<void> _handleInitialMedia() async {

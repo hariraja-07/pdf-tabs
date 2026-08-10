@@ -82,6 +82,10 @@ class _PdfTabsScreenState extends ConsumerState<PdfTabsScreen> {
                       () => GlobalKey<PdfDocumentViewState>(),
                     ),
                     filePath: tab.filePath,
+                    initialPageIndex: tab.pageIndex,
+                    onPageChanged: (pageIndex) => ref
+                        .read(pdfTabsProvider.notifier)
+                        .setPosition(tab.id, pageIndex),
                   ),
               ],
             ),

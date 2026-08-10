@@ -117,4 +117,32 @@ void main() {
 
     expect(restoredState.tabs, isEmpty);
   });
+
+  test('setPosition updates the tab page index in memory', () async {
+    await open('/docs/a.pdf');
+    final id = container.read(pdfTabsProvider).requireValue.tabs.first.id;
+
+    container.read(pdfTabsProvider.notifier).setPosition(id, 7);
+
+    final tab = container.read(pdfTabsProvider).requireValue.tabs.first;
+    expect(tab.pageIndex, 7);
+  });
+
+  test('page positions survive a new container (persisted)', () async {
+    final pdf = File('${Directory.systemTemp.path}/pdf_tabs_pos_test.pdf');
+    await pdf.writeAsString('test');
+
+    await open(pdf.path);
+    final id = container.read(pdfTabsProvider).requireValue.tabs.first.id;
+    container.read(pdfTabsProvider.notifier).setPosition(id, 12);
+    await container.read(pdfTabsProvider.notifier).persist();
+
+    final restored = ProviderContainer();
+    addTearDown(restored.dispose);
+    final restoredState = await restored.read(pdfTabsProvider.future);
+
+    expect(restoredState.tabs.single.pageIndex, 12);
+
+    await pdf.delete();
+  });
 }

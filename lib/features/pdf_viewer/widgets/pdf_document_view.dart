@@ -2,9 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:pdfrx/pdfrx.dart';
 
 class PdfDocumentView extends StatefulWidget {
-  const PdfDocumentView({super.key, required this.filePath});
+  const PdfDocumentView({
+    super.key,
+    required this.filePath,
+    this.initialPageIndex = 0,
+    this.onPageChanged,
+  });
 
   final String filePath;
+  final int initialPageIndex;
+  final ValueChanged<int>? onPageChanged;
 
   @override
   State<PdfDocumentView> createState() => PdfDocumentViewState();
@@ -100,12 +107,25 @@ class PdfDocumentViewState extends State<PdfDocumentView> {
                 message: '$error',
                 onRetry: () => setState(() => _reloadKey++),
               ),
+              onPageChanged: (pageNumber) {
+                if (!mounted || pageNumber == null) return;
+                widget.onPageChanged?.call(pageNumber - 1);
+              },
               pagePaintCallbacks: [
                 if (_searcher != null)
                   _searcher!.pageTextMatchPaintCallback,
               ],
               onViewerReady: (document, controller) {
                 _initSearcher();
+                final initial = widget.initialPageIndex;
+                if (initial > 0 &&
+                    controller.isReady &&
+                    initial < controller.pageCount) {
+                  controller.goToPage(
+                    pageNumber: initial + 1,
+                    duration: Duration.zero,
+                  );
+                }
               },
             ),
           ),
