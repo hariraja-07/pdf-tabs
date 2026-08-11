@@ -248,24 +248,6 @@ abstract class AppLocalizations {
   /// **'File not found on device'**
   String get fileNotFound;
 
-  /// No description provided for @renameTab.
-  ///
-  /// In en, this message translates to:
-  /// **'Rename Tab'**
-  String get renameTab;
-
-  /// No description provided for @newTabName.
-  ///
-  /// In en, this message translates to:
-  /// **'New tab name'**
-  String get newTabName;
-
-  /// No description provided for @rename.
-  ///
-  /// In en, this message translates to:
-  /// **'Rename'**
-  String get rename;
-
   /// No description provided for @zoomIn.
   ///
   /// In en, this message translates to:

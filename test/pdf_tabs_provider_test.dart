@@ -62,17 +62,6 @@ void main() {
     expect(container.read(pdfTabsProvider).requireValue.activeIndex, 0);
   });
 
-  test('rename tab updates displayName', () async {
-    await open('/docs/a.pdf');
-    final tab = container.read(pdfTabsProvider).requireValue.tabs.first;
-
-    await container.read(pdfTabsProvider.notifier).rename(tab.id, 'My Custom Report');
-
-    final updated = container.read(pdfTabsProvider).requireValue.tabs.first;
-    expect(updated.displayName, 'My Custom Report');
-    expect(updated.fileName, 'a.pdf');
-  });
-
   test('reorder tabs updates tab order and active index', () async {
     await open('/docs/a.pdf');
     await open('/docs/b.pdf');

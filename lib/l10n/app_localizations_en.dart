@@ -88,15 +88,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fileNotFound => 'File not found on device';
 
   @override
-  String get renameTab => 'Rename Tab';
-
-  @override
-  String get newTabName => 'New tab name';
-
-  @override
-  String get rename => 'Rename';
-
-  @override
   String get zoomIn => 'Zoom in';
 
   @override

@@ -168,16 +168,6 @@ class PdfTabsNotifier extends AsyncNotifier<PdfTabsState> {
     );
   }
 
-  Future<void> rename(String id, String newName) async {
-    final current = await future;
-    final index = current.tabs.indexWhere((tab) => tab.id == id);
-    if (index < 0) return;
-
-    final tabs = [...current.tabs];
-    tabs[index] = tabs[index].copyWith(displayName: newName.trim());
-    await _set(current.copyWith(tabs: tabs));
-  }
-
   void setPosition(String id, int pageIndex) {
     final current = state.valueOrNull;
     if (current == null) return;

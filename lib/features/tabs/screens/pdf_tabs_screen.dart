@@ -61,49 +61,6 @@ class _PdfTabsScreenState extends ConsumerState<PdfTabsScreen> {
       );
   }
 
-  Future<void> _renameTab(PdfTabData tab) async {
-    final controller = TextEditingController(text: tab.displayName);
-    final l10n = AppLocalizations.of(context);
-    final result = await showDialog<String>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: Text(l10n.renameTab),
-          content: TextField(
-            controller: controller,
-            autofocus: true,
-            decoration: InputDecoration(
-              hintText: l10n.newTabName,
-            ),
-            onSubmitted: (val) {
-              if (val.trim().isNotEmpty) {
-                Navigator.of(dialogContext).pop(val.trim());
-              }
-            },
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text(l10n.cancel),
-            ),
-            FilledButton(
-              onPressed: () {
-                if (controller.text.trim().isNotEmpty) {
-                  Navigator.of(dialogContext).pop(controller.text.trim());
-                }
-              },
-              child: Text(l10n.rename),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (result != null && result.isNotEmpty) {
-      await ref.read(pdfTabsProvider.notifier).rename(tab.id, result);
-    }
-  }
-
   Widget _buildDocument(BuildContext context, PdfTabData tab) {
     final builder = widget.documentBuilder;
     if (builder != null) return builder(context, tab);
@@ -184,7 +141,6 @@ class _PdfTabsScreenState extends ConsumerState<PdfTabsScreen> {
               onActivate: (id) =>
                   ref.read(pdfTabsProvider.notifier).activate(id),
               onClose: (id) => _closeTab(state, id),
-              onRename: _renameTab,
               onReorder: (oldIndex, newIndex) => ref
                   .read(pdfTabsProvider.notifier)
                   .reorder(oldIndex, newIndex),
@@ -211,7 +167,6 @@ class _TabStrip extends StatelessWidget {
   final bool isPicking;
   final ValueChanged<String> onActivate;
   final ValueChanged<String> onClose;
-  final ValueChanged<PdfTabData> onRename;
   final void Function(int oldIndex, int newIndex) onReorder;
   final VoidCallback onAdd;
 
@@ -221,7 +176,6 @@ class _TabStrip extends StatelessWidget {
     required this.isPicking,
     required this.onActivate,
     required this.onClose,
-    required this.onRename,
     required this.onReorder,
     required this.onAdd,
   });
@@ -250,7 +204,6 @@ class _TabStrip extends StatelessWidget {
                     active: i == activeIndex,
                     onTap: () => onActivate(tab.id),
                     onClose: () => onClose(tab.id),
-                    onLongPress: () => onRename(tab),
                   ),
                 );
               },
@@ -338,14 +291,12 @@ class _TabChip extends StatelessWidget {
   final bool active;
   final VoidCallback onTap;
   final VoidCallback onClose;
-  final VoidCallback onLongPress;
 
   const _TabChip({
     required this.tab,
     required this.active,
     required this.onTap,
     required this.onClose,
-    required this.onLongPress,
   });
 
   @override
@@ -364,7 +315,6 @@ class _TabChip extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(8),
           onTap: onTap,
-          onLongPress: onLongPress,
           child: Padding(
             padding: const EdgeInsets.only(left: 10),
             child: Row(
