@@ -23,12 +23,16 @@ class PdfDocumentViewState extends State<PdfDocumentView> {
   final _pdfController = PdfViewerController();
   PdfTextSearcher? _searcher;
   bool _isSearchOpen = false;
+  bool _isCaseSensitive = false;
+  bool _isInverted = false;
   final _searchController = TextEditingController();
   int _currentMatchIndex = 0;
   int _totalMatches = 0;
   int _reloadKey = 0;
   int? _currentPageNumber;
   int? _pageCount;
+
+  bool get isSearchOpen => _isSearchOpen;
 
   @override
   void dispose() {
@@ -71,7 +75,19 @@ class PdfDocumentViewState extends State<PdfDocumentView> {
       });
       return;
     }
-    _searcher?.startTextSearch(query);
+    _searcher?.startTextSearch(
+      query,
+      caseInsensitive: !_isCaseSensitive,
+    );
+  }
+
+  void _toggleCaseSensitive() {
+    setState(() {
+      _isCaseSensitive = !_isCaseSensitive;
+    });
+    if (_searchController.text.isNotEmpty) {
+      _onSearchChanged(_searchController.text);
+    }
   }
 
   void _nextMatch() {
@@ -80,6 +96,20 @@ class PdfDocumentViewState extends State<PdfDocumentView> {
 
   void _previousMatch() {
     _searcher?.goToPrevMatch();
+  }
+
+  void _zoomIn() {
+    _pdfController.zoomUp();
+  }
+
+  void _zoomOut() {
+    _pdfController.zoomDown();
+  }
+
+  void _toggleInvertMode() {
+    setState(() {
+      _isInverted = !_isInverted;
+    });
   }
 
   void _goToPreviousPage() {
@@ -147,6 +177,74 @@ class PdfDocumentViewState extends State<PdfDocumentView> {
     }
   }
 
+  Widget _buildPdfContent(BuildContext context) {
+    final viewer = PdfViewer.file(
+      widget.filePath,
+      key: ValueKey(_reloadKey),
+      controller: _pdfController,
+      params: PdfViewerParams(
+        margin: 8.0,
+        textSelectionParams: const PdfTextSelectionParams(
+          enabled: true,
+        ),
+        matchTextColor: Colors.yellow.withAlpha(127),
+        activeMatchTextColor: Colors.orange.withAlpha(127),
+        errorBannerBuilder: (context, error, _, _) => _LoadErrorView(
+          message: '$error',
+          onRetry: () => setState(() => _reloadKey++),
+        ),
+        onPageChanged: (pageNumber) {
+          if (!mounted) return;
+          setState(() => _currentPageNumber = pageNumber);
+          if (pageNumber != null) {
+            widget.onPageChanged?.call(pageNumber - 1);
+          }
+        },
+        pagePaintCallbacks: [
+          if (_searcher != null) _searcher!.pageTextMatchPaintCallback,
+        ],
+        viewerOverlayBuilder: (context, size, handleLinkTap) => [
+          PdfViewerScrollThumb(
+            controller: _pdfController,
+            orientation: ScrollbarOrientation.right,
+            thumbBuilder: (context, thumbSize, pageNumber, controller) =>
+                _ScrollThumb(size: thumbSize, pageNumber: pageNumber),
+          ),
+        ],
+        onViewerReady: (document, controller) {
+          _initSearcher();
+          setState(() {
+            _pageCount = controller.pageCount;
+            _currentPageNumber = controller.pageNumber;
+          });
+          final initial = widget.initialPageIndex;
+          if (initial > 0 &&
+              controller.isReady &&
+              initial < controller.pageCount) {
+            controller.goToPage(
+              pageNumber: initial + 1,
+              duration: Duration.zero,
+            );
+          }
+        },
+      ),
+    );
+
+    if (_isInverted) {
+      return ColorFiltered(
+        colorFilter: const ColorFilter.matrix([
+          -1, 0, 0, 0, 255,
+          0, -1, 0, 0, 255,
+          0, 0, -1, 0, 255,
+          0, 0, 0, 1, 0,
+        ]),
+        child: viewer,
+      );
+    }
+
+    return viewer;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -159,60 +257,26 @@ class PdfDocumentViewState extends State<PdfDocumentView> {
             onPrevious: _previousMatch,
             currentMatch: _currentMatchIndex,
             totalMatches: _totalMatches,
+            isCaseSensitive: _isCaseSensitive,
+            onToggleCaseSensitive: _toggleCaseSensitive,
           ),
         Expanded(
-          child: PdfViewer.file(
-            widget.filePath,
-            key: ValueKey(_reloadKey),
-            controller: _pdfController,
-            params: PdfViewerParams(
-              margin: 8.0,
-              textSelectionParams: const PdfTextSelectionParams(
-                enabled: true,
-              ),
-              matchTextColor: Colors.yellow.withAlpha(127),
-              activeMatchTextColor: Colors.orange.withAlpha(127),
-              errorBannerBuilder: (context, error, _, _) => _LoadErrorView(
-                message: '$error',
-                onRetry: () => setState(() => _reloadKey++),
-              ),
-              onPageChanged: (pageNumber) {
-                if (!mounted) return;
-                setState(() => _currentPageNumber = pageNumber);
-                if (pageNumber != null) {
-                  widget.onPageChanged?.call(pageNumber - 1);
-                }
-              },
-              pagePaintCallbacks: [
-                if (_searcher != null)
-                  _searcher!.pageTextMatchPaintCallback,
-              ],
-              onViewerReady: (document, controller) {
-                _initSearcher();
-                setState(() {
-                  _pageCount = controller.pageCount;
-                  _currentPageNumber = controller.pageNumber;
-                });
-                final initial = widget.initialPageIndex;
-                if (initial > 0 &&
-                    controller.isReady &&
-                    initial < controller.pageCount) {
-                  controller.goToPage(
-                    pageNumber: initial + 1,
-                    duration: Duration.zero,
-                  );
-                }
-              },
-            ),
-          ),
+          child: _buildPdfContent(context),
         ),
         if (_pageCount != null)
           _PageNavigationBar(
             currentPage: _currentPageNumber ?? 1,
             pageCount: _pageCount!,
+            isInverted: _isInverted,
             onPrevious: _goToPreviousPage,
             onNext: _goToNextPage,
             onJump: _jumpToPage,
+            onZoomIn: _zoomIn,
+            onZoomOut: _zoomOut,
+            onToggleInvert: _toggleInvertMode,
+            onPageSliderChange: (targetPage) {
+              _pdfController.goToPage(pageNumber: targetPage);
+            },
           ),
       ],
     );
@@ -226,6 +290,8 @@ class _SearchBar extends StatelessWidget {
   final VoidCallback onPrevious;
   final int currentMatch;
   final int totalMatches;
+  final bool isCaseSensitive;
+  final VoidCallback onToggleCaseSensitive;
 
   const _SearchBar({
     required this.controller,
@@ -234,6 +300,8 @@ class _SearchBar extends StatelessWidget {
     required this.onPrevious,
     required this.currentMatch,
     required this.totalMatches,
+    required this.isCaseSensitive,
+    required this.onToggleCaseSensitive,
   });
 
   @override
@@ -254,6 +322,20 @@ class _SearchBar extends StatelessWidget {
               decoration: InputDecoration(
                 hintText: l10n.searchInPdf,
                 prefixIcon: const Icon(Icons.search, size: 20),
+                suffixIcon: IconButton(
+                  icon: Text(
+                    'Aa',
+                    style: TextStyle(
+                      fontWeight:
+                          isCaseSensitive ? FontWeight.bold : FontWeight.normal,
+                      color: isCaseSensitive
+                          ? colorScheme.primary
+                          : colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  onPressed: onToggleCaseSensitive,
+                  tooltip: l10n.matchCase,
+                ),
                 isDense: true,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 12,
@@ -299,16 +381,26 @@ class _SearchBar extends StatelessWidget {
 class _PageNavigationBar extends StatelessWidget {
   final int currentPage;
   final int pageCount;
+  final bool isInverted;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
   final VoidCallback onJump;
+  final VoidCallback onZoomIn;
+  final VoidCallback onZoomOut;
+  final VoidCallback onToggleInvert;
+  final ValueChanged<int> onPageSliderChange;
 
   const _PageNavigationBar({
     required this.currentPage,
     required this.pageCount,
+    required this.isInverted,
     required this.onPrevious,
     required this.onNext,
     required this.onJump,
+    required this.onZoomIn,
+    required this.onZoomOut,
+    required this.onToggleInvert,
+    required this.onPageSliderChange,
   });
 
   @override
@@ -317,7 +409,8 @@ class _PageNavigationBar extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
 
     return Container(
-      height: 48,
+      height: 52,
+      padding: const EdgeInsets.symmetric(horizontal: 4),
       color: colorScheme.surfaceContainerHighest,
       child: Row(
         children: [
@@ -325,15 +418,18 @@ class _PageNavigationBar extends StatelessWidget {
             icon: const Icon(Icons.chevron_left),
             onPressed: currentPage > 1 ? onPrevious : null,
             tooltip: l10n.previousPage,
+            visualDensity: VisualDensity.compact,
           ),
-          Expanded(
-            child: InkWell(
-              onTap: onJump,
-              borderRadius: BorderRadius.circular(8),
-              child: Center(
-                child: Text(
-                  '$currentPage / $pageCount',
-                  style: const TextStyle(fontSize: 14),
+          InkWell(
+            onTap: onJump,
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Text(
+                '$currentPage / $pageCount',
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
@@ -342,8 +438,69 @@ class _PageNavigationBar extends StatelessWidget {
             icon: const Icon(Icons.chevron_right),
             onPressed: currentPage < pageCount ? onNext : null,
             tooltip: l10n.nextPage,
+            visualDensity: VisualDensity.compact,
+          ),
+          const Spacer(),
+          IconButton(
+            icon: const Icon(Icons.zoom_out, size: 20),
+            onPressed: onZoomOut,
+            tooltip: l10n.zoomOut,
+            visualDensity: VisualDensity.compact,
+          ),
+          IconButton(
+            icon: const Icon(Icons.zoom_in, size: 20),
+            onPressed: onZoomIn,
+            tooltip: l10n.zoomIn,
+            visualDensity: VisualDensity.compact,
+          ),
+          IconButton(
+            icon: Icon(
+              isInverted ? Icons.invert_colors : Icons.invert_colors_off,
+              size: 20,
+              color: isInverted ? colorScheme.primary : null,
+            ),
+            onPressed: onToggleInvert,
+            tooltip: l10n.toggleDarkMode,
+            visualDensity: VisualDensity.compact,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ScrollThumb extends StatelessWidget {
+  final Size size;
+  final int? pageNumber;
+
+  const _ScrollThumb({required this.size, required this.pageNumber});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      width: size.width,
+      height: size.height,
+      decoration: BoxDecoration(
+        color: colorScheme.inverseSurface.withValues(alpha: 0.85),
+        borderRadius: BorderRadius.circular(6),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 2,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Center(
+        child: Text(
+          '${pageNumber ?? ''}',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onInverseSurface,
+          ),
+        ),
       ),
     );
   }
