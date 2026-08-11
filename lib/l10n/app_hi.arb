@@ -20,5 +20,21 @@
   "cancel": "रद्द करें",
   "go": "जाएं",
   "previousPage": "पिछला पेज",
-  "nextPage": "अगला पेज"
+  "nextPage": "अगला पेज",
+  "recentFiles": "हाल की फ़ाइलें",
+  "clearAllRecents": "हाल की फ़ाइलें हटाएं",
+  "clear": "साफ़ करें",
+  "fileNotFound": "फ़ाइल डिवाइस पर नहीं मिली",
+  "renameTab": "टैब का नाम बदलें",
+  "newTabName": "नया टैब नाम",
+  "rename": "नाम बदलें",
+  "zoomIn": "ज़ूम इन",
+  "zoomOut": "ज़ूम आउट",
+  "fitWidth": "चौड़ाई के अनुसार",
+  "fitPage": "पेज के अनुसार",
+  "toggleDarkMode": "डार्क रीडर मोड बदलें",
+  "continuousScroll": "निरंतर स्क्रॉल",
+  "singlePage": "एकल पेज",
+  "matchCase": "अक्षर मिलान",
+  "sharePdf": "PDF शेयर करें"
 }

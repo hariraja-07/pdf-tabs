@@ -74,4 +74,52 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nextPage => 'Next page';
+
+  @override
+  String get recentFiles => 'Recent Files';
+
+  @override
+  String get clearAllRecents => 'Clear Recent Files';
+
+  @override
+  String get clear => 'Clear';
+
+  @override
+  String get fileNotFound => 'File not found on device';
+
+  @override
+  String get renameTab => 'Rename Tab';
+
+  @override
+  String get newTabName => 'New tab name';
+
+  @override
+  String get rename => 'Rename';
+
+  @override
+  String get zoomIn => 'Zoom in';
+
+  @override
+  String get zoomOut => 'Zoom out';
+
+  @override
+  String get fitWidth => 'Fit width';
+
+  @override
+  String get fitPage => 'Fit page';
+
+  @override
+  String get toggleDarkMode => 'Toggle dark reader mode';
+
+  @override
+  String get continuousScroll => 'Continuous scroll';
+
+  @override
+  String get singlePage => 'Single page';
+
+  @override
+  String get matchCase => 'Match case';
+
+  @override
+  String get sharePdf => 'Share PDF';
 }

@@ -223,6 +223,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Next page'**
   String get nextPage;
+
+  /// No description provided for @recentFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent Files'**
+  String get recentFiles;
+
+  /// No description provided for @clearAllRecents.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Recent Files'**
+  String get clearAllRecents;
+
+  /// No description provided for @clear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get clear;
+
+  /// No description provided for @fileNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'File not found on device'**
+  String get fileNotFound;
+
+  /// No description provided for @renameTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename Tab'**
+  String get renameTab;
+
+  /// No description provided for @newTabName.
+  ///
+  /// In en, this message translates to:
+  /// **'New tab name'**
+  String get newTabName;
+
+  /// No description provided for @rename.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get rename;
+
+  /// No description provided for @zoomIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom in'**
+  String get zoomIn;
+
+  /// No description provided for @zoomOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom out'**
+  String get zoomOut;
+
+  /// No description provided for @fitWidth.
+  ///
+  /// In en, this message translates to:
+  /// **'Fit width'**
+  String get fitWidth;
+
+  /// No description provided for @fitPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Fit page'**
+  String get fitPage;
+
+  /// No description provided for @toggleDarkMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Toggle dark reader mode'**
+  String get toggleDarkMode;
+
+  /// No description provided for @continuousScroll.
+  ///
+  /// In en, this message translates to:
+  /// **'Continuous scroll'**
+  String get continuousScroll;
+
+  /// No description provided for @singlePage.
+  ///
+  /// In en, this message translates to:
+  /// **'Single page'**
+  String get singlePage;
+
+  /// No description provided for @matchCase.
+  ///
+  /// In en, this message translates to:
+  /// **'Match case'**
+  String get matchCase;
+
+  /// No description provided for @sharePdf.
+  ///
+  /// In en, this message translates to:
+  /// **'Share PDF'**
+  String get sharePdf;
 }
 
 class _AppLocalizationsDelegate

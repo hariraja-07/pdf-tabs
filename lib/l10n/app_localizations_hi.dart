@@ -74,4 +74,52 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get nextPage => 'अगला पेज';
+
+  @override
+  String get recentFiles => 'हाल की फ़ाइलें';
+
+  @override
+  String get clearAllRecents => 'हाल की फ़ाइलें हटाएं';
+
+  @override
+  String get clear => 'साफ़ करें';
+
+  @override
+  String get fileNotFound => 'फ़ाइल डिवाइस पर नहीं मिली';
+
+  @override
+  String get renameTab => 'टैब का नाम बदलें';
+
+  @override
+  String get newTabName => 'नया टैब नाम';
+
+  @override
+  String get rename => 'नाम बदलें';
+
+  @override
+  String get zoomIn => 'ज़ूम इन';
+
+  @override
+  String get zoomOut => 'ज़ूम आउट';
+
+  @override
+  String get fitWidth => 'चौड़ाई के अनुसार';
+
+  @override
+  String get fitPage => 'पेज के अनुसार';
+
+  @override
+  String get toggleDarkMode => 'डार्क रीडर मोड बदलें';
+
+  @override
+  String get continuousScroll => 'निरंतर स्क्रॉल';
+
+  @override
+  String get singlePage => 'एकल पेज';
+
+  @override
+  String get matchCase => 'अक्षर मिलान';
+
+  @override
+  String get sharePdf => 'PDF शेयर करें';
 }

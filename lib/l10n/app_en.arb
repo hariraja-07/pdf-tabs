@@ -37,5 +37,21 @@
   "cancel": "Cancel",
   "go": "Go",
   "previousPage": "Previous page",
-  "nextPage": "Next page"
+  "nextPage": "Next page",
+  "recentFiles": "Recent Files",
+  "clearAllRecents": "Clear Recent Files",
+  "clear": "Clear",
+  "fileNotFound": "File not found on device",
+  "renameTab": "Rename Tab",
+  "newTabName": "New tab name",
+  "rename": "Rename",
+  "zoomIn": "Zoom in",
+  "zoomOut": "Zoom out",
+  "fitWidth": "Fit width",
+  "fitPage": "Fit page",
+  "toggleDarkMode": "Toggle dark reader mode",
+  "continuousScroll": "Continuous scroll",
+  "singlePage": "Single page",
+  "matchCase": "Match case",
+  "sharePdf": "Share PDF"
 }
