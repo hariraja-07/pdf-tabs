@@ -16,11 +16,17 @@ class PdfOpener {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['pdf'],
+        allowMultiple: true,
       );
 
-      final path = result?.files.single.path;
-      if (path == null || path.isEmpty) return;
-      await ref.read(pdfTabsProvider.notifier).open(path);
+      if (result == null || result.files.isEmpty) return;
+
+      for (final file in result.files) {
+        final path = file.path;
+        if (path != null && path.isNotEmpty) {
+          await ref.read(pdfTabsProvider.notifier).open(path);
+        }
+      }
     } finally {
       ref.read(isPickingProvider.notifier).state = false;
     }

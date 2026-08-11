@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../l10n/app_localizations.dart';
@@ -26,6 +27,17 @@ class _PdfTabsScreenState extends ConsumerState<PdfTabsScreen> {
     _docKeys[activeTab.id]?.currentState?.toggleSearch();
   }
 
+  Future<void> _shareCurrentTab(PdfTabsState state) async {
+    if (state.tabs.isEmpty) return;
+    final activeTab = state.tabs[state.activeIndex];
+    final box = context.findRenderObject() as RenderBox?;
+    await Share.shareXFiles(
+      [XFile(activeTab.filePath)],
+      text: activeTab.displayName,
+      sharePositionOrigin: box != null ? box.localToGlobal(Offset.zero) & box.size : null,
+    );
+  }
+
   Future<void> _closeTab(PdfTabsState state, String id) async {
     final tab = state.tabs.firstWhere((element) => element.id == id);
     _docKeys.remove(id);
@@ -37,7 +49,7 @@ class _PdfTabsScreenState extends ConsumerState<PdfTabsScreen> {
       ..showSnackBar(
         SnackBar(
           content: Text(
-            AppLocalizations.of(context).tabClosed(tab.fileName),
+            AppLocalizations.of(context).tabClosed(tab.displayName),
           ),
           action: SnackBarAction(
             label: AppLocalizations.of(context).undo,
@@ -47,6 +59,49 @@ class _PdfTabsScreenState extends ConsumerState<PdfTabsScreen> {
           ),
         ),
       );
+  }
+
+  Future<void> _renameTab(PdfTabData tab) async {
+    final controller = TextEditingController(text: tab.displayName);
+    final l10n = AppLocalizations.of(context);
+    final result = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(l10n.renameTab),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            decoration: InputDecoration(
+              hintText: l10n.newTabName,
+            ),
+            onSubmitted: (val) {
+              if (val.trim().isNotEmpty) {
+                Navigator.of(dialogContext).pop(val.trim());
+              }
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(l10n.cancel),
+            ),
+            FilledButton(
+              onPressed: () {
+                if (controller.text.trim().isNotEmpty) {
+                  Navigator.of(dialogContext).pop(controller.text.trim());
+                }
+              },
+              child: Text(l10n.rename),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result != null && result.isNotEmpty) {
+      await ref.read(pdfTabsProvider.notifier).rename(tab.id, result);
+    }
   }
 
   Widget _buildDocument(BuildContext context, PdfTabData tab) {
@@ -86,39 +141,65 @@ class _PdfTabsScreenState extends ConsumerState<PdfTabsScreen> {
 
   Widget _buildTabbed(BuildContext context, PdfTabsState state) {
     final isPicking = ref.watch(isPickingProvider);
+    final activeTab = state.tabs[state.activeIndex];
+    final activeDocState = _docKeys[activeTab.id]?.currentState;
+    final isSearchOpen = activeDocState?.isSearchOpen ?? false;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(AppLocalizations.of(context).appTitle),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () => _toggleSearch(state),
-            tooltip: AppLocalizations.of(context).search,
+    return PopScope(
+      canPop: !isSearchOpen,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (isSearchOpen) {
+          activeDocState?.toggleSearch();
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            activeTab.displayName,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 18),
           ),
-          const ThemeToggleButton(),
-        ],
-      ),
-      body: Column(
-        children: [
-          _TabStrip(
-            tabs: state.tabs,
-            activeIndex: state.activeIndex,
-            isPicking: isPicking,
-            onActivate: (id) =>
-                ref.read(pdfTabsProvider.notifier).activate(id),
-            onClose: (id) => _closeTab(state, id),
-            onAdd: () => PdfOpener.pickAndOpen(ref),
-          ),
-          Expanded(
-            child: IndexedStack(
-              index: state.activeIndex,
-              children: [
-                for (final tab in state.tabs) _buildDocument(context, tab),
-              ],
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.search),
+              onPressed: () => _toggleSearch(state),
+              tooltip: AppLocalizations.of(context).search,
             ),
-          ),
-        ],
+            IconButton(
+              icon: const Icon(Icons.share_outlined),
+              onPressed: () => _shareCurrentTab(state),
+              tooltip: AppLocalizations.of(context).sharePdf,
+            ),
+            const ThemeToggleButton(),
+          ],
+        ),
+        body: Column(
+          children: [
+            _TabStrip(
+              tabs: state.tabs,
+              activeIndex: state.activeIndex,
+              isPicking: isPicking,
+              onActivate: (id) =>
+                  ref.read(pdfTabsProvider.notifier).activate(id),
+              onClose: (id) => _closeTab(state, id),
+              onRename: _renameTab,
+              onReorder: (oldIndex, newIndex) => ref
+                  .read(pdfTabsProvider.notifier)
+                  .reorder(oldIndex, newIndex),
+              onAdd: () => PdfOpener.pickAndOpen(ref),
+            ),
+            Expanded(
+              child: IndexedStack(
+                index: state.activeIndex,
+                children: [
+                  for (final tab in state.tabs) _buildDocument(context, tab),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -130,6 +211,8 @@ class _TabStrip extends StatelessWidget {
   final bool isPicking;
   final ValueChanged<String> onActivate;
   final ValueChanged<String> onClose;
+  final ValueChanged<PdfTabData> onRename;
+  final void Function(int oldIndex, int newIndex) onReorder;
   final VoidCallback onAdd;
 
   const _TabStrip({
@@ -138,6 +221,8 @@ class _TabStrip extends StatelessWidget {
     required this.isPicking,
     required this.onActivate,
     required this.onClose,
+    required this.onRename,
+    required this.onReorder,
     required this.onAdd,
   });
 
@@ -146,21 +231,33 @@ class _TabStrip extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
-      height: 56,
-      color: colorScheme.surfaceContainerHighest,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      height: 52,
+      color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
+      child: Row(
         children: [
-          for (var i = 0; i < tabs.length; i++)
-            _TabChip(
-              tab: tabs[i],
-              active: i == activeIndex,
-              onTap: () => onActivate(tabs[i].id),
-              onClose: () => onClose(tabs[i].id),
+          Expanded(
+            child: ReorderableListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              itemCount: tabs.length,
+              onReorder: onReorder,
+              itemBuilder: (context, i) {
+                final tab = tabs[i];
+                return Container(
+                  key: ValueKey(tab.id),
+                  child: _TabChip(
+                    tab: tab,
+                    active: i == activeIndex,
+                    onTap: () => onActivate(tab.id),
+                    onClose: () => onClose(tab.id),
+                    onLongPress: () => onRename(tab),
+                  ),
+                );
+              },
             ),
+          ),
           Padding(
-            padding: const EdgeInsets.only(left: 4),
+            padding: const EdgeInsets.only(right: 8),
             child: IconButton.filledTonal(
               onPressed: isPicking ? null : onAdd,
               tooltip: AppLocalizations.of(context).openPdfTooltip,
@@ -236,16 +333,19 @@ class _ErrorScreen extends StatelessWidget {
   }
 }
 
-class _TabChip extends StatelessWidget {  final PdfTabData tab;
+class _TabChip extends StatelessWidget {
+  final PdfTabData tab;
   final bool active;
   final VoidCallback onTap;
   final VoidCallback onClose;
+  final VoidCallback onLongPress;
 
   const _TabChip({
     required this.tab,
     required this.active,
     required this.onTap,
     required this.onClose,
+    required this.onLongPress,
   });
 
   @override
@@ -260,20 +360,26 @@ class _TabChip extends StatelessWidget {  final PdfTabData tab;
       child: Material(
         color: active ? colorScheme.primaryContainer : colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
+        elevation: active ? 1 : 0,
         child: InkWell(
           borderRadius: BorderRadius.circular(8),
           onTap: onTap,
+          onLongPress: onLongPress,
           child: Padding(
             padding: const EdgeInsets.only(left: 10),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.picture_as_pdf, size: 16, color: foreground),
+                Icon(
+                  Icons.picture_as_pdf,
+                  size: 16,
+                  color: active ? colorScheme.primary : foreground,
+                ),
                 const SizedBox(width: 6),
                 ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 120),
+                  constraints: const BoxConstraints(maxWidth: 130),
                   child: Text(
-                    tab.fileName,
+                    tab.displayName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
