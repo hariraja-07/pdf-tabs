@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../l10n/app_localizations.dart';
@@ -32,7 +33,8 @@ class ThemeToggleButton extends ConsumerWidget {
   const ThemeToggleButton({super.key});
 
   Future<void> _toggle(WidgetRef ref) async {
-    final current = ref.read(themeModeProvider).valueOrNull ?? ThemeMode.system;
+    final current =
+        ref.read(themeModeProvider).valueOrNull ?? ThemeMode.system;
     final next = switch (current) {
       ThemeMode.light => ThemeMode.dark,
       ThemeMode.dark => ThemeMode.system,
@@ -42,10 +44,10 @@ class ThemeToggleButton extends ConsumerWidget {
   }
 
   IconData _icon(ThemeMode mode) => switch (mode) {
-    ThemeMode.light => Icons.light_mode,
-    ThemeMode.dark => Icons.dark_mode,
-    ThemeMode.system => Icons.brightness_auto,
-  };
+        ThemeMode.light => Icons.light_mode,
+        ThemeMode.dark => Icons.dark_mode,
+        ThemeMode.system => Icons.brightness_auto,
+      };
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -61,25 +63,38 @@ class ThemeToggleButton extends ConsumerWidget {
 class AppTheme {
   AppTheme._();
 
-  static const _seedColor = Colors.blue;
+  static const _seedColor = Color(0xFF4F46E5); // Modern Indigo
 
   static ThemeData lightTheme() {
     final colorScheme = ColorScheme.fromSeed(
       seedColor: _seedColor,
       brightness: Brightness.light,
     );
+    final baseTextTheme = ThemeData.light().textTheme;
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
+      textTheme: GoogleFonts.interTextTheme(baseTextTheme),
       appBarTheme: AppBarTheme(
         centerTitle: false,
         elevation: 0,
         scrolledUnderElevation: 1,
+        backgroundColor: colorScheme.surface,
       ),
       scaffoldBackgroundColor: colorScheme.surface,
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: colorScheme.primaryContainer,
         foregroundColor: colorScheme.onPrimaryContainer,
+        elevation: 3,
+      ),
+      cardTheme: CardThemeData(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+          ),
+        ),
       ),
     );
   }
@@ -89,18 +104,31 @@ class AppTheme {
       seedColor: _seedColor,
       brightness: Brightness.dark,
     );
+    final baseTextTheme = ThemeData.dark().textTheme;
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
+      textTheme: GoogleFonts.interTextTheme(baseTextTheme),
       appBarTheme: AppBarTheme(
         centerTitle: false,
         elevation: 0,
         scrolledUnderElevation: 1,
+        backgroundColor: colorScheme.surface,
       ),
       scaffoldBackgroundColor: colorScheme.surface,
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: colorScheme.primaryContainer,
         foregroundColor: colorScheme.onPrimaryContainer,
+        elevation: 3,
+      ),
+      cardTheme: CardThemeData(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+          ),
+        ),
       ),
     );
   }
