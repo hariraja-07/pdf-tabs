@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:pdf_tabs/features/home/recent_files_provider.dart';
 import 'package:pdf_tabs/features/tabs/pdf_tabs_provider.dart';
 
 void main() {
@@ -59,6 +60,40 @@ void main() {
     await activate(container.read(pdfTabsProvider).requireValue.tabs.first.id);
 
     expect(container.read(pdfTabsProvider).requireValue.activeIndex, 0);
+  });
+
+  test('rename tab updates displayName', () async {
+    await open('/docs/a.pdf');
+    final tab = container.read(pdfTabsProvider).requireValue.tabs.first;
+
+    await container.read(pdfTabsProvider.notifier).rename(tab.id, 'My Custom Report');
+
+    final updated = container.read(pdfTabsProvider).requireValue.tabs.first;
+    expect(updated.displayName, 'My Custom Report');
+    expect(updated.fileName, 'a.pdf');
+  });
+
+  test('reorder tabs updates tab order and active index', () async {
+    await open('/docs/a.pdf');
+    await open('/docs/b.pdf');
+    await open('/docs/c.pdf');
+
+    // Currently active is c.pdf (index 2)
+    // Reorder index 0 (a.pdf) to index 3 (after c.pdf)
+    await container.read(pdfTabsProvider.notifier).reorder(0, 3);
+
+    final tabs = container.read(pdfTabsProvider).requireValue.tabs;
+    expect(tabs.map((t) => t.fileName).toList(), ['b.pdf', 'c.pdf', 'a.pdf']);
+    expect(container.read(pdfTabsProvider).requireValue.activeIndex, 1); // c.pdf is now at index 1
+  });
+
+  test('opening tab registers file in recentFilesProvider', () async {
+    await open('/docs/report.pdf');
+
+    final recents = await container.read(recentFilesProvider.future);
+    expect(recents.length, 1);
+    expect(recents.first.fileName, 'report.pdf');
+    expect(recents.first.filePath, '/docs/report.pdf');
   });
 
   test('close removes tab and reindexes active', () async {
