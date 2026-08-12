@@ -64,5 +64,7 @@
         "type": "int"
       }
     }
-  }
+  },
+  "tableOfContents": "Table of contents",
+  "noTableOfContents": "No table of contents"
 }

@@ -136,4 +136,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String bookmarkPage(int page) {
     return 'Page $page';
   }
+
+  @override
+  String get tableOfContents => 'Table of contents';
+
+  @override
+  String get noTableOfContents => 'No table of contents';
 }

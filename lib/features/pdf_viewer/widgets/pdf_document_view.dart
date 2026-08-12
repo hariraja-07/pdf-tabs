@@ -34,6 +34,7 @@ class PdfDocumentViewState extends ConsumerState<PdfDocumentView> {
   int _reloadKey = 0;
   int? _currentPageNumber;
   int? _pageCount;
+  List<PdfOutlineNode>? _outline;
 
   bool get isSearchOpen => _isSearchOpen;
 
@@ -126,16 +127,33 @@ class PdfDocumentViewState extends ConsumerState<PdfDocumentView> {
       );
   }
 
-  void _openBookmarks() {
+  Future<void> _loadOutline(PdfDocument document) async {
+    try {
+      final outline = await document.loadOutline();
+      if (!mounted) return;
+      setState(() => _outline = outline);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _outline = const []);
+    }
+  }
+
+  void _openNavigation() {
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
-      builder: (sheetContext) => _BookmarkSheet(
+      isScrollControlled: true,
+      builder: (sheetContext) => _NavigationSheet(
         filePath: widget.filePath,
+        outline: _outline,
         currentPageNumber: _currentPageNumber ?? 1,
-        onJump: (pageIndex) {
+        onJumpToPage: (pageIndex) {
           Navigator.of(sheetContext).pop();
           _pdfController.goToPage(pageNumber: pageIndex + 1);
+        },
+        onJumpToDest: (dest) {
+          Navigator.of(sheetContext).pop();
+          _pdfController.goToDest(dest);
         },
       ),
     );
@@ -242,6 +260,7 @@ class PdfDocumentViewState extends ConsumerState<PdfDocumentView> {
         ],
         onViewerReady: (document, controller) {
           _initSearcher();
+          _loadOutline(document);
           setState(() {
             _pageCount = controller.pageCount;
             _currentPageNumber = controller.pageNumber;
@@ -303,7 +322,7 @@ class PdfDocumentViewState extends ConsumerState<PdfDocumentView> {
             onZoomIn: _zoomIn,
             onZoomOut: _zoomOut,
             onToggleBookmark: _toggleBookmark,
-            onOpenBookmarks: _openBookmarks,
+            onOpenBookmarks: _openNavigation,
             onPageSliderChange: (targetPage) {
               _pdfController.goToPage(pageNumber: targetPage);
             },
@@ -516,12 +535,106 @@ class _PageNavigationBar extends StatelessWidget {
   }
 }
 
-class _BookmarkSheet extends ConsumerWidget {
+class _NavigationSheet extends ConsumerStatefulWidget {
+  final String filePath;
+  final List<PdfOutlineNode>? outline;
+  final int currentPageNumber;
+  final ValueChanged<int> onJumpToPage;
+  final ValueChanged<PdfDest?> onJumpToDest;
+
+  const _NavigationSheet({
+    required this.filePath,
+    required this.outline,
+    required this.currentPageNumber,
+    required this.onJumpToPage,
+    required this.onJumpToDest,
+  });
+
+  @override
+  ConsumerState<_NavigationSheet> createState() => _NavigationSheetState();
+}
+
+class _NavigationSheetState extends ConsumerState<_NavigationSheet> {
+  int _tabIndex = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
+    final hasOutline = (widget.outline?.isNotEmpty ?? false);
+    final entries =
+        ref.watch(bookmarksProvider).valueOrNull?[widget.filePath] ?? const [];
+
+    if (!hasOutline) _tabIndex = 0;
+
+    return SafeArea(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(context).height * 0.7,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+              child: Row(
+                children: [
+                  Text(
+                    l10n.bookmarks,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const Spacer(),
+                  Text(
+                    '${entries.length}',
+                    style: TextStyle(color: colorScheme.onSurfaceVariant),
+                  ),
+                ],
+              ),
+            ),
+            if (hasOutline)
+              TabBar(
+                tabAlignment: TabAlignment.start,
+                isScrollable: true,
+                dividerColor: Colors.transparent,
+                indicatorColor: colorScheme.primary,
+                labelColor: colorScheme.primary,
+                unselectedLabelColor: colorScheme.onSurfaceVariant,
+                onTap: (index) => setState(() => _tabIndex = index),
+                tabs: [
+                  Tab(text: l10n.bookmarks),
+                  Tab(text: l10n.tableOfContents),
+                ],
+              ),
+            Flexible(
+              child: IndexedStack(
+                index: _tabIndex,
+                children: [
+                  _BookmarksList(
+                    filePath: widget.filePath,
+                    currentPageNumber: widget.currentPageNumber,
+                    onJump: widget.onJumpToPage,
+                  ),
+                  if (hasOutline)
+                    _OutlineList(
+                      nodes: widget.outline!,
+                      onJump: widget.onJumpToDest,
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BookmarksList extends ConsumerWidget {
   final String filePath;
   final int currentPageNumber;
   final ValueChanged<int> onJump;
 
-  const _BookmarkSheet({
+  const _BookmarksList({
     required this.filePath,
     required this.currentPageNumber,
     required this.onJump,
@@ -534,59 +647,170 @@ class _BookmarkSheet extends ConsumerWidget {
     final entries =
         ref.watch(bookmarksProvider).valueOrNull?[filePath] ?? const [];
 
-    return SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+    if (entries.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.all(32),
+        child: Text(
+          l10n.noBookmarks,
+          style: TextStyle(color: colorScheme.onSurfaceVariant),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      shrinkWrap: true,
+      itemCount: entries.length,
+      itemBuilder: (context, index) {
+        final entry = entries[index];
+        final pageNumber = entry.pageIndex + 1;
+        return ListTile(
+          leading: Icon(
+            Icons.bookmark,
+            size: 20,
+            color: colorScheme.primary,
+          ),
+          title: Text(l10n.bookmarkPage(pageNumber)),
+          subtitle: Text(l10n.pageRange(pageNumber, pageNumber)),
+          trailing: pageNumber == currentPageNumber
+              ? const Icon(Icons.radio_button_checked, size: 16)
+              : null,
+          onTap: () => onJump(entry.pageIndex),
+        );
+      },
+    );
+  }
+}
+
+class _OutlineList extends StatelessWidget {
+  final List<PdfOutlineNode> nodes;
+  final ValueChanged<PdfDest?> onJump;
+
+  const _OutlineList({required this.nodes, required this.onJump});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
+
+    if (nodes.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.all(32),
+        child: Text(
+          l10n.noTableOfContents,
+          style: TextStyle(color: colorScheme.onSurfaceVariant),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      shrinkWrap: true,
+      itemCount: nodes.length,
+      itemBuilder: (context, index) => _OutlineTile(
+        node: nodes[index],
+        depth: 0,
+        onJump: onJump,
+      ),
+    );
+  }
+}
+
+class _OutlineTile extends StatefulWidget {
+  final PdfOutlineNode node;
+  final int depth;
+  final ValueChanged<PdfDest?> onJump;
+
+  const _OutlineTile({
+    required this.node,
+    required this.depth,
+    required this.onJump,
+  });
+
+  @override
+  State<_OutlineTile> createState() => _OutlineTileState();
+}
+
+class _OutlineTileState extends State<_OutlineTile> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final node = widget.node;
+    final hasChildren = node.children.isNotEmpty;
+    final pageNumber = node.dest?.pageNumber;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        InkWell(
+          onTap: () {
+            if (node.dest != null) {
+              widget.onJump(node.dest);
+            } else if (hasChildren) {
+              setState(() => _expanded = !_expanded);
+            }
+          },
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: 12.0 + widget.depth * 16,
+              right: 16,
+              top: 4,
+              bottom: 4,
+            ),
             child: Row(
               children: [
-                Text(
-                  l10n.bookmarks,
-                  style: Theme.of(context).textTheme.titleMedium,
+                SizedBox(
+                  width: 32,
+                  height: 32,
+                  child: hasChildren
+                      ? IconButton(
+                          icon: Icon(
+                            _expanded
+                                ? Icons.expand_more
+                                : Icons.chevron_right,
+                            size: 20,
+                          ),
+                          visualDensity: VisualDensity.compact,
+                          onPressed: () =>
+                              setState(() => _expanded = !_expanded),
+                        )
+                      : const Icon(Icons.menu_book, size: 18),
                 ),
-                const Spacer(),
-                Text(
-                  '${entries.length}',
-                  style: TextStyle(color: colorScheme.onSurfaceVariant),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    node.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight:
+                          hasChildren ? FontWeight.w600 : FontWeight.w400,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
                 ),
+                if (pageNumber != null)
+                  Text(
+                    '$pageNumber',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
               ],
             ),
           ),
-          Flexible(
-            child: entries.isEmpty
-                ? Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: Text(
-                      l10n.noBookmarks,
-                      style: TextStyle(color: colorScheme.onSurfaceVariant),
-                    ),
-                  )
-                : ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: entries.length,
-                    itemBuilder: (context, index) {
-                      final entry = entries[index];
-                      final pageNumber = entry.pageIndex + 1;
-                      return ListTile(
-                        leading: Icon(
-                          Icons.bookmark,
-                          size: 20,
-                          color: colorScheme.primary,
-                        ),
-                        title: Text(l10n.bookmarkPage(pageNumber)),
-                        subtitle: Text(l10n.pageRange(pageNumber, pageNumber)),
-                        trailing: pageNumber == currentPageNumber
-                            ? const Icon(Icons.radio_button_checked, size: 16)
-                            : null,
-                        onTap: () => onJump(entry.pageIndex),
-                      );
-                    },
-                  ),
-          ),
-        ],
-      ),
+        ),
+        if (_expanded)
+          for (final child in node.children)
+            _OutlineTile(
+              node: child,
+              depth: widget.depth + 1,
+              onJump: widget.onJump,
+            ),
+      ],
     );
   }
 }

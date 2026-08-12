@@ -339,6 +339,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Page {page}'**
   String bookmarkPage(int page);
+
+  /// No description provided for @tableOfContents.
+  ///
+  /// In en, this message translates to:
+  /// **'Table of contents'**
+  String get tableOfContents;
+
+  /// No description provided for @noTableOfContents.
+  ///
+  /// In en, this message translates to:
+  /// **'No table of contents'**
+  String get noTableOfContents;
 }
 
 class _AppLocalizationsDelegate
