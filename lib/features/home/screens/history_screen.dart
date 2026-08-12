@@ -55,8 +55,13 @@ class HistoryScreen extends ConsumerWidget {
           return ListView.builder(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
             itemCount: recentFiles.length,
-            itemBuilder: (context, index) =>
-                RecentFileTile(item: recentFiles[index]),
+            itemBuilder: (context, index) => RecentFileTile(
+              item: recentFiles[index],
+              onOpened: () {
+                final navigator = Navigator.of(context);
+                if (navigator.canPop()) navigator.pop();
+              },
+            ),
           );
         },
       ),

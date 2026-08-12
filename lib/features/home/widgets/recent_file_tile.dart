@@ -8,9 +8,10 @@ import '../../tabs/pdf_tabs_provider.dart';
 import '../recent_files_provider.dart';
 
 class RecentFileTile extends ConsumerWidget {
-  const RecentFileTile({super.key, required this.item});
+  const RecentFileTile({super.key, required this.item, this.onOpened});
 
   final RecentFileItem item;
+  final VoidCallback? onOpened;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -78,6 +79,7 @@ class RecentFileTile extends ConsumerWidget {
                   await ref
                       .read(pdfTabsProvider.notifier)
                       .open(item.filePath, initialPageIndex: item.pageIndex);
+                  onOpened?.call();
                 }
               : null,
         ),

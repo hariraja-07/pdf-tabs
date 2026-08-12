@@ -36,8 +36,6 @@ class PdfDocumentViewState extends ConsumerState<PdfDocumentView> {
   int? _currentPageNumber;
   int? _pageCount;
   List<PdfOutlineNode>? _outline;
-  final List<int> _history = [];
-  int _historyPos = -1;
 
   bool get isSearchOpen => _isSearchOpen;
 
@@ -105,14 +103,6 @@ class PdfDocumentViewState extends ConsumerState<PdfDocumentView> {
     _searcher?.goToPrevMatch();
   }
 
-  void _zoomIn() {
-    _pdfController.zoomUp();
-  }
-
-  void _zoomOut() {
-    _pdfController.zoomDown();
-  }
-
   Future<void> _toggleBookmark() async {
     final pageNumber = _currentPageNumber ?? 1;
     final l10n = AppLocalizations.of(context);
@@ -142,15 +132,6 @@ class PdfDocumentViewState extends ConsumerState<PdfDocumentView> {
   }
 
   void _openNavigation() {
-    _showNavigationSheet(initialTabIndex: 0);
-  }
-
-  void openTableOfContents() {
-    if (!hasOutline) return;
-    _showNavigationSheet(initialTabIndex: 1);
-  }
-
-  void _showNavigationSheet({required int initialTabIndex}) {
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -158,17 +139,14 @@ class PdfDocumentViewState extends ConsumerState<PdfDocumentView> {
       builder: (sheetContext) => _NavigationSheet(
         filePath: widget.filePath,
         outline: _outline,
-        initialTabIndex: initialTabIndex,
         currentPageNumber: _currentPageNumber ?? 1,
         onJumpToPage: (pageIndex) {
           Navigator.of(sheetContext).pop();
-          _pushHistoryTo(pageIndex + 1);
           _pdfController.goToPage(pageNumber: pageIndex + 1);
         },
         onJumpToDest: (dest) {
           Navigator.of(sheetContext).pop();
           if (dest == null) return;
-          _pushHistoryTo(dest.pageNumber);
           _pdfController.goToDest(dest);
         },
       ),
@@ -189,47 +167,6 @@ class PdfDocumentViewState extends ConsumerState<PdfDocumentView> {
     }
     _pdfController.goToPage(pageNumber: pageNumber + 1);
   }
-
-  bool get canGoBack => _historyPos > 0;
-
-  bool get canGoForward =>
-      _historyPos >= 0 && _historyPos < _history.length - 1;
-
-  void _pushHistoryTo(int target) {
-    final current = _currentPageNumber;
-    if (current == null || current == target) return;
-    if (_historyPos < _history.length - 1) {
-      _history.removeRange(_historyPos + 1, _history.length);
-    }
-    if (_history.isEmpty || _history[_historyPos] != current) {
-      _history.add(current);
-      _historyPos++;
-    }
-    _history.add(target);
-    _historyPos++;
-  }
-
-  void _goBack() {
-    if (!canGoBack) return;
-    _historyPos--;
-    _pdfController.goToPage(pageNumber: _history[_historyPos]);
-  }
-
-  void _goForward() {
-    if (!canGoForward) return;
-    _historyPos++;
-    _pdfController.goToPage(pageNumber: _history[_historyPos]);
-  }
-
-  void goBack() => _goBack();
-
-  void goForward() => _goForward();
-
-  void zoomIn() => _zoomIn();
-
-  void zoomOut() => _zoomOut();
-
-  bool get hasOutline => (_outline?.isNotEmpty ?? false);
 
   Future<void> _jumpToPage() async {
     final pageCount = _pageCount;
@@ -277,7 +214,6 @@ class PdfDocumentViewState extends ConsumerState<PdfDocumentView> {
     );
 
     if (result != null && mounted) {
-      _pushHistoryTo(result);
       await _pdfController.goToPage(pageNumber: result);
     }
   }
@@ -574,7 +510,6 @@ class _PageNavigationBar extends StatelessWidget {
 class _NavigationSheet extends ConsumerStatefulWidget {
   final String filePath;
   final List<PdfOutlineNode>? outline;
-  final int initialTabIndex;
   final int currentPageNumber;
   final ValueChanged<int> onJumpToPage;
   final ValueChanged<PdfDest?> onJumpToDest;
@@ -582,7 +517,6 @@ class _NavigationSheet extends ConsumerStatefulWidget {
   const _NavigationSheet({
     required this.filePath,
     required this.outline,
-    required this.initialTabIndex,
     required this.currentPageNumber,
     required this.onJumpToPage,
     required this.onJumpToDest,
@@ -593,14 +527,7 @@ class _NavigationSheet extends ConsumerStatefulWidget {
 }
 
 class _NavigationSheetState extends ConsumerState<_NavigationSheet> {
-  late int _tabIndex;
-
-  @override
-  void initState() {
-    super.initState();
-    final hasOutline = (widget.outline?.isNotEmpty ?? false);
-    _tabIndex = hasOutline ? widget.initialTabIndex : 0;
-  }
+  int _tabIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -609,6 +536,8 @@ class _NavigationSheetState extends ConsumerState<_NavigationSheet> {
     final hasOutline = (widget.outline?.isNotEmpty ?? false);
     final entries =
         ref.watch(bookmarksProvider).valueOrNull?[widget.filePath] ?? const [];
+
+    if (!hasOutline) _tabIndex = 0;
 
     return SafeArea(
       child: ConstrainedBox(

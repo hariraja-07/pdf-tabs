@@ -156,12 +156,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noTableOfContents => 'No table of contents';
 
   @override
-  String get historyBack => 'Go back';
-
-  @override
-  String get historyForward => 'Go forward';
-
-  @override
   String get fullscreen => 'Fullscreen';
 
   @override

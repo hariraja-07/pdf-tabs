@@ -71,8 +71,6 @@
   },
   "tableOfContents": "Table of contents",
   "noTableOfContents": "No table of contents",
-  "historyBack": "Go back",
-  "historyForward": "Go forward",
   "fullscreen": "Fullscreen",
   "exitFullscreen": "Exit fullscreen",
   "pageN": "Page {n}",

@@ -45,7 +45,6 @@ class _PdfTabsScreenState extends ConsumerState<PdfTabsScreen> {
   List<PopupMenuEntry<String>> _overflowMenuItems(
     BuildContext context,
     PdfTabsState state,
-    PdfDocumentViewState? docState,
   ) {
     final l10n = AppLocalizations.of(context);
     final isDarkReader = ref.watch(invertModeProvider).valueOrNull ?? false;
@@ -66,43 +65,15 @@ class _PdfTabsScreenState extends ConsumerState<PdfTabsScreen> {
           contentPadding: EdgeInsets.zero,
         ),
       ),
-      CheckedPopupMenuItem(
+      PopupMenuItem(
         value: 'dark_reader',
-        checked: isDarkReader,
         child: ListTile(
           leading: const Icon(Icons.invert_colors),
           title: Text(l10n.darkReader),
+          trailing: isDarkReader ? const Icon(Icons.check) : null,
           contentPadding: EdgeInsets.zero,
         ),
       ),
-      const PopupMenuDivider(),
-      PopupMenuItem(
-        value: 'back',
-        enabled: docState?.canGoBack ?? false,
-        child: ListTile(
-          leading: const Icon(Icons.arrow_back),
-          title: Text(l10n.historyBack),
-          contentPadding: EdgeInsets.zero,
-        ),
-      ),
-      PopupMenuItem(
-        value: 'forward',
-        enabled: docState?.canGoForward ?? false,
-        child: ListTile(
-          leading: const Icon(Icons.arrow_forward),
-          title: Text(l10n.historyForward),
-          contentPadding: EdgeInsets.zero,
-        ),
-      ),
-      if (docState?.hasOutline ?? false)
-        PopupMenuItem(
-          value: 'toc',
-          child: ListTile(
-            leading: const Icon(Icons.account_tree_outlined),
-            title: Text(l10n.tableOfContents),
-            contentPadding: EdgeInsets.zero,
-          ),
-        ),
       PopupMenuItem(
         value: 'history',
         child: ListTile(
@@ -126,7 +97,6 @@ class _PdfTabsScreenState extends ConsumerState<PdfTabsScreen> {
   void _onOverflowSelected(
     BuildContext context,
     PdfTabsState state,
-    PdfDocumentViewState? docState,
     String value,
   ) {
     switch (value) {
@@ -136,12 +106,6 @@ class _PdfTabsScreenState extends ConsumerState<PdfTabsScreen> {
         ref.read(fullscreenModeProvider.notifier).state = true;
       case 'dark_reader':
         ref.read(invertModeProvider.notifier).toggle();
-      case 'back':
-        docState?.goBack();
-      case 'forward':
-        docState?.goForward();
-      case 'toc':
-        docState?.openTableOfContents();
       case 'history':
         Navigator.of(context).push(
           MaterialPageRoute<void>(
@@ -258,11 +222,10 @@ class _PdfTabsScreenState extends ConsumerState<PdfTabsScreen> {
                     onSelected: (value) => _onOverflowSelected(
                       context,
                       state,
-                      activeDocState,
                       value,
                     ),
                     itemBuilder: (context) =>
-                        _overflowMenuItems(context, state, activeDocState),
+                        _overflowMenuItems(context, state),
                   ),
                 ],
               ),
