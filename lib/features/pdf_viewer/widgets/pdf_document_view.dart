@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pdfrx/pdfrx.dart';
 
 import '../../../l10n/app_localizations.dart';
+import '../../bookmarks/bookmarks_provider.dart';
 
-class PdfDocumentView extends StatefulWidget {
+final invertModeProvider = StateProvider<bool>((ref) => false);
+
+class PdfDocumentView extends ConsumerStatefulWidget {
   const PdfDocumentView({
     super.key,
     required this.filePath,
@@ -16,15 +20,14 @@ class PdfDocumentView extends StatefulWidget {
   final ValueChanged<int>? onPageChanged;
 
   @override
-  State<PdfDocumentView> createState() => PdfDocumentViewState();
+  ConsumerState<PdfDocumentView> createState() => PdfDocumentViewState();
 }
 
-class PdfDocumentViewState extends State<PdfDocumentView> {
+class PdfDocumentViewState extends ConsumerState<PdfDocumentView> {
   final _pdfController = PdfViewerController();
   PdfTextSearcher? _searcher;
   bool _isSearchOpen = false;
   bool _isCaseSensitive = false;
-  bool _isInverted = false;
   final _searchController = TextEditingController();
   int _currentMatchIndex = 0;
   int _totalMatches = 0;
@@ -106,10 +109,36 @@ class PdfDocumentViewState extends State<PdfDocumentView> {
     _pdfController.zoomDown();
   }
 
-  void _toggleInvertMode() {
-    setState(() {
-      _isInverted = !_isInverted;
-    });
+  Future<void> _toggleBookmark() async {
+    final pageNumber = _currentPageNumber ?? 1;
+    final l10n = AppLocalizations.of(context);
+    final nowBookmarked = await ref
+        .read(bookmarksProvider.notifier)
+        .toggle(widget.filePath, pageNumber - 1);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(nowBookmarked ? l10n.bookmarkAdded : l10n.bookmarkRemoved),
+          duration: const Duration(seconds: 1),
+        ),
+      );
+  }
+
+  void _openBookmarks() {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => _BookmarkSheet(
+        filePath: widget.filePath,
+        currentPageNumber: _currentPageNumber ?? 1,
+        onJump: (pageIndex) {
+          Navigator.of(sheetContext).pop();
+          _pdfController.goToPage(pageNumber: pageIndex + 1);
+        },
+      ),
+    );
   }
 
   void _goToPreviousPage() {
@@ -230,7 +259,7 @@ class PdfDocumentViewState extends State<PdfDocumentView> {
       ),
     );
 
-    if (_isInverted) {
+    if (ref.watch(invertModeProvider)) {
       return ColorFiltered(
         colorFilter: const ColorFilter.matrix([
           -1, 0, 0, 0, 255,
@@ -267,19 +296,29 @@ class PdfDocumentViewState extends State<PdfDocumentView> {
           _PageNavigationBar(
             currentPage: _currentPageNumber ?? 1,
             pageCount: _pageCount!,
-            isInverted: _isInverted,
+            isBookmarked: _isCurrentPageBookmarked,
             onPrevious: _goToPreviousPage,
             onNext: _goToNextPage,
             onJump: _jumpToPage,
             onZoomIn: _zoomIn,
             onZoomOut: _zoomOut,
-            onToggleInvert: _toggleInvertMode,
+            onToggleBookmark: _toggleBookmark,
+            onOpenBookmarks: _openBookmarks,
             onPageSliderChange: (targetPage) {
               _pdfController.goToPage(pageNumber: targetPage);
             },
           ),
       ],
     );
+  }
+
+  bool get _isCurrentPageBookmarked {
+    final bookmarks = ref.watch(bookmarksProvider).valueOrNull;
+    if (bookmarks == null) return false;
+    final fileBookmarks = bookmarks[widget.filePath];
+    if (fileBookmarks == null) return false;
+    final pageIndex = (_currentPageNumber ?? 1) - 1;
+    return fileBookmarks.any((entry) => entry.pageIndex == pageIndex);
   }
 }
 
@@ -381,25 +420,27 @@ class _SearchBar extends StatelessWidget {
 class _PageNavigationBar extends StatelessWidget {
   final int currentPage;
   final int pageCount;
-  final bool isInverted;
+  final bool isBookmarked;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
   final VoidCallback onJump;
   final VoidCallback onZoomIn;
   final VoidCallback onZoomOut;
-  final VoidCallback onToggleInvert;
+  final VoidCallback onToggleBookmark;
+  final VoidCallback onOpenBookmarks;
   final ValueChanged<int> onPageSliderChange;
 
   const _PageNavigationBar({
     required this.currentPage,
     required this.pageCount,
-    required this.isInverted,
+    required this.isBookmarked,
     required this.onPrevious,
     required this.onNext,
     required this.onJump,
     required this.onZoomIn,
     required this.onZoomOut,
-    required this.onToggleInvert,
+    required this.onToggleBookmark,
+    required this.onOpenBookmarks,
     required this.onPageSliderChange,
   });
 
@@ -455,13 +496,94 @@ class _PageNavigationBar extends StatelessWidget {
           ),
           IconButton(
             icon: Icon(
-              isInverted ? Icons.invert_colors : Icons.invert_colors_off,
+              isBookmarked ? Icons.bookmark : Icons.bookmark_border,
               size: 20,
-              color: isInverted ? colorScheme.primary : null,
+              color: isBookmarked ? colorScheme.primary : null,
             ),
-            onPressed: onToggleInvert,
-            tooltip: l10n.toggleDarkMode,
+            onPressed: onToggleBookmark,
+            tooltip: isBookmarked ? l10n.removeBookmark : l10n.addBookmark,
             visualDensity: VisualDensity.compact,
+          ),
+          IconButton(
+            icon: const Icon(Icons.bookmarks_outlined, size: 20),
+            onPressed: onOpenBookmarks,
+            tooltip: l10n.bookmarks,
+            visualDensity: VisualDensity.compact,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BookmarkSheet extends ConsumerWidget {
+  final String filePath;
+  final int currentPageNumber;
+  final ValueChanged<int> onJump;
+
+  const _BookmarkSheet({
+    required this.filePath,
+    required this.currentPageNumber,
+    required this.onJump,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
+    final entries =
+        ref.watch(bookmarksProvider).valueOrNull?[filePath] ?? const [];
+
+    return SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+            child: Row(
+              children: [
+                Text(
+                  l10n.bookmarks,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const Spacer(),
+                Text(
+                  '${entries.length}',
+                  style: TextStyle(color: colorScheme.onSurfaceVariant),
+                ),
+              ],
+            ),
+          ),
+          Flexible(
+            child: entries.isEmpty
+                ? Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Text(
+                      l10n.noBookmarks,
+                      style: TextStyle(color: colorScheme.onSurfaceVariant),
+                    ),
+                  )
+                : ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: entries.length,
+                    itemBuilder: (context, index) {
+                      final entry = entries[index];
+                      final pageNumber = entry.pageIndex + 1;
+                      return ListTile(
+                        leading: Icon(
+                          Icons.bookmark,
+                          size: 20,
+                          color: colorScheme.primary,
+                        ),
+                        title: Text(l10n.bookmarkPage(pageNumber)),
+                        subtitle: Text(l10n.pageRange(pageNumber, pageNumber)),
+                        trailing: pageNumber == currentPageNumber
+                            ? const Icon(Icons.radio_button_checked, size: 16)
+                            : null,
+                        onTap: () => onJump(entry.pageIndex),
+                      );
+                    },
+                  ),
           ),
         ],
       ),

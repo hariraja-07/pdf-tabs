@@ -50,5 +50,19 @@
   "continuousScroll": "Continuous scroll",
   "singlePage": "Single page",
   "matchCase": "Match case",
-  "sharePdf": "Share PDF"
+  "sharePdf": "Share PDF",
+  "addBookmark": "Add bookmark",
+  "removeBookmark": "Remove bookmark",
+  "bookmarks": "Bookmarks",
+  "noBookmarks": "No bookmarks yet",
+  "bookmarkAdded": "Bookmark added",
+  "bookmarkRemoved": "Bookmark removed",
+  "bookmarkPage": "Page {page}",
+  "@bookmarkPage": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  }
 }

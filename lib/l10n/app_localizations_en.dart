@@ -113,4 +113,27 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sharePdf => 'Share PDF';
+
+  @override
+  String get addBookmark => 'Add bookmark';
+
+  @override
+  String get removeBookmark => 'Remove bookmark';
+
+  @override
+  String get bookmarks => 'Bookmarks';
+
+  @override
+  String get noBookmarks => 'No bookmarks yet';
+
+  @override
+  String get bookmarkAdded => 'Bookmark added';
+
+  @override
+  String get bookmarkRemoved => 'Bookmark removed';
+
+  @override
+  String bookmarkPage(int page) {
+    return 'Page $page';
+  }
 }

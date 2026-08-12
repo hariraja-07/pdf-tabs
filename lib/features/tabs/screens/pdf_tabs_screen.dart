@@ -129,6 +129,17 @@ class _PdfTabsScreenState extends ConsumerState<PdfTabsScreen> {
               onPressed: () => _shareCurrentTab(state),
               tooltip: AppLocalizations.of(context).sharePdf,
             ),
+            IconButton(
+              icon: Icon(
+                ref.watch(invertModeProvider)
+                    ? Icons.invert_colors
+                    : Icons.invert_colors_off,
+              ),
+              onPressed: () =>
+                  ref.read(invertModeProvider.notifier).state =
+                      !ref.read(invertModeProvider),
+              tooltip: AppLocalizations.of(context).toggleDarkMode,
+            ),
             const ThemeToggleButton(),
           ],
         ),
