@@ -134,7 +134,35 @@ void main() {
     expect(find.text('Go back'), findsOneWidget);
     expect(find.text('Go forward'), findsOneWidget);
     expect(find.text('Table of contents'), findsNothing);
+    expect(find.text('Reading history'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget);
+  });
+
+  testWidgets('reading history opens from overflow menu', (tester) async {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    await container.read(pdfTabsProvider.future);
+    await container.read(pdfTabsProvider.notifier).open('/docs/a.pdf');
+
+    Widget documentBuilder(BuildContext context, PdfTabData tab) {
+      return Center(child: Text('VIEW:${tab.fileName}'));
+    }
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: wrap(PdfTabsScreen(documentBuilder: documentBuilder)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Reading history'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Reading history'), findsOneWidget);
+    expect(find.text('a.pdf'), findsOneWidget);
   });
 
   testWidgets('settings opens from overflow menu', (tester) async {

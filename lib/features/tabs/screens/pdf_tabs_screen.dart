@@ -5,6 +5,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../home/recent_files_provider.dart';
+import '../../home/screens/history_screen.dart';
 import '../../home/screens/home_screen.dart';
 import '../../pdf_viewer/widgets/pdf_document_view.dart';
 import '../../settings/invert_mode_provider.dart';
@@ -102,6 +103,14 @@ class _PdfTabsScreenState extends ConsumerState<PdfTabsScreen> {
             contentPadding: EdgeInsets.zero,
           ),
         ),
+      PopupMenuItem(
+        value: 'history',
+        child: ListTile(
+          leading: const Icon(Icons.history),
+          title: Text(l10n.readingHistory),
+          contentPadding: EdgeInsets.zero,
+        ),
+      ),
       const PopupMenuDivider(),
       PopupMenuItem(
         value: 'settings',
@@ -133,6 +142,12 @@ class _PdfTabsScreenState extends ConsumerState<PdfTabsScreen> {
         docState?.goForward();
       case 'toc':
         docState?.openTableOfContents();
+      case 'history':
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => const HistoryScreen(),
+          ),
+        );
       case 'settings':
         Navigator.of(context).push(
           MaterialPageRoute<void>(

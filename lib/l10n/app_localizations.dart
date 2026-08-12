@@ -220,11 +220,23 @@ abstract class AppLocalizations {
   /// **'Next page'**
   String get nextPage;
 
-  /// No description provided for @recentFiles.
+  /// No description provided for @continueReading.
   ///
   /// In en, this message translates to:
-  /// **'Recent Files'**
-  String get recentFiles;
+  /// **'Continue reading'**
+  String get continueReading;
+
+  /// No description provided for @readingHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading history'**
+  String get readingHistory;
+
+  /// No description provided for @noHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'No reading history yet'**
+  String get noHistory;
 
   /// No description provided for @clearAllRecents.
   ///

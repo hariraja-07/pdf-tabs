@@ -76,7 +76,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nextPage => 'Next page';
 
   @override
-  String get recentFiles => 'Recent Files';
+  String get continueReading => 'Continue reading';
+
+  @override
+  String get readingHistory => 'Reading history';
+
+  @override
+  String get noHistory => 'No reading history yet';
 
   @override
   String get clearAllRecents => 'Clear Recent Files';
