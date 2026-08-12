@@ -363,6 +363,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Go forward'**
   String get historyForward;
+
+  /// No description provided for @fullscreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Fullscreen'**
+  String get fullscreen;
+
+  /// No description provided for @exitFullscreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit fullscreen'**
+  String get exitFullscreen;
 }
 
 class _AppLocalizationsDelegate

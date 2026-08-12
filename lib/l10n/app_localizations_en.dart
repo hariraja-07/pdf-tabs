@@ -148,4 +148,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get historyForward => 'Go forward';
+
+  @override
+  String get fullscreen => 'Fullscreen';
+
+  @override
+  String get exitFullscreen => 'Exit fullscreen';
 }

@@ -7,6 +7,8 @@ import '../../bookmarks/bookmarks_provider.dart';
 
 final invertModeProvider = StateProvider<bool>((ref) => false);
 
+final fullscreenModeProvider = StateProvider<bool>((ref) => false);
+
 class PdfDocumentView extends ConsumerStatefulWidget {
   const PdfDocumentView({
     super.key,
@@ -348,7 +350,7 @@ class PdfDocumentViewState extends ConsumerState<PdfDocumentView> {
         Expanded(
           child: _buildPdfContent(context),
         ),
-        if (_pageCount != null)
+        if (_pageCount != null && !ref.watch(fullscreenModeProvider))
           _PageNavigationBar(
             currentPage: _currentPageNumber ?? 1,
             pageCount: _pageCount!,

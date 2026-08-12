@@ -98,75 +98,124 @@ class _PdfTabsScreenState extends ConsumerState<PdfTabsScreen> {
 
   Widget _buildTabbed(BuildContext context, PdfTabsState state) {
     final isPicking = ref.watch(isPickingProvider);
+    final isFullscreen = ref.watch(fullscreenModeProvider);
     final activeTab = state.tabs[state.activeIndex];
     final activeDocState = _docKeys[activeTab.id]?.currentState;
     final isSearchOpen = activeDocState?.isSearchOpen ?? false;
 
     return PopScope(
-      canPop: !isSearchOpen,
+      canPop: !isSearchOpen && !isFullscreen,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
-        if (isSearchOpen) {
+        if (isFullscreen) {
+          ref.read(fullscreenModeProvider.notifier).state = false;
+        } else if (isSearchOpen) {
           activeDocState?.toggleSearch();
         }
       },
       child: Scaffold(
-        appBar: AppBar(
-          title: Text(
-            activeTab.displayName,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 18),
-          ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.search),
-              onPressed: () => _toggleSearch(state),
-              tooltip: AppLocalizations.of(context).search,
-            ),
-            IconButton(
-              icon: const Icon(Icons.share_outlined),
-              onPressed: () => _shareCurrentTab(state),
-              tooltip: AppLocalizations.of(context).sharePdf,
-            ),
-            IconButton(
-              icon: Icon(
-                ref.watch(invertModeProvider)
-                    ? Icons.invert_colors
-                    : Icons.invert_colors_off,
-              ),
-              onPressed: () =>
-                  ref.read(invertModeProvider.notifier).state =
-                      !ref.read(invertModeProvider),
-              tooltip: AppLocalizations.of(context).toggleDarkMode,
-            ),
-            const ThemeToggleButton(),
-          ],
-        ),
-        body: Column(
-          children: [
-            _TabStrip(
-              tabs: state.tabs,
-              activeIndex: state.activeIndex,
-              isPicking: isPicking,
-              onActivate: (id) =>
-                  ref.read(pdfTabsProvider.notifier).activate(id),
-              onClose: (id) => _closeTab(state, id),
-              onReorder: (oldIndex, newIndex) => ref
-                  .read(pdfTabsProvider.notifier)
-                  .reorder(oldIndex, newIndex),
-              onAdd: () => PdfOpener.pickAndOpen(ref),
-            ),
-            Expanded(
-              child: IndexedStack(
-                index: state.activeIndex,
-                children: [
-                  for (final tab in state.tabs) _buildDocument(context, tab),
+        appBar: isFullscreen
+            ? null
+            : AppBar(
+                title: Text(
+                  activeTab.displayName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 18),
+                ),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.search),
+                    onPressed: () => _toggleSearch(state),
+                    tooltip: AppLocalizations.of(context).search,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.share_outlined),
+                    onPressed: () => _shareCurrentTab(state),
+                    tooltip: AppLocalizations.of(context).sharePdf,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.fullscreen),
+                    onPressed: () => ref
+                        .read(fullscreenModeProvider.notifier)
+                        .state = true,
+                    tooltip: AppLocalizations.of(context).fullscreen,
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      ref.watch(invertModeProvider)
+                          ? Icons.invert_colors
+                          : Icons.invert_colors_off,
+                    ),
+                    onPressed: () =>
+                        ref.read(invertModeProvider.notifier).state =
+                            !ref.read(invertModeProvider),
+                    tooltip: AppLocalizations.of(context).toggleDarkMode,
+                  ),
+                  const ThemeToggleButton(),
                 ],
               ),
-            ),
-          ],
-        ),
+        body: isFullscreen
+            ? Stack(
+                children: [
+                  Positioned.fill(
+                    child: IndexedStack(
+                      index: state.activeIndex,
+                      children: [
+                        for (final tab in state.tabs)
+                          _buildDocument(context, tab),
+                      ],
+                    ),
+                  ),
+                  SafeArea(
+                    child: Align(
+                      alignment: Alignment.topRight,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Material(
+                          color: Colors.black54,
+                          shape: const CircleBorder(),
+                          child: IconButton(
+                            icon: const Icon(
+                              Icons.fullscreen_exit,
+                              color: Colors.white,
+                            ),
+                            tooltip: AppLocalizations.of(context).exitFullscreen,
+                            onPressed: () => ref
+                                .read(fullscreenModeProvider.notifier)
+                                .state = false,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            : Column(
+                children: [
+                  _TabStrip(
+                    tabs: state.tabs,
+                    activeIndex: state.activeIndex,
+                    isPicking: isPicking,
+                    onActivate: (id) =>
+                        ref.read(pdfTabsProvider.notifier).activate(id),
+                    onClose: (id) => _closeTab(state, id),
+                    onReorder: (oldIndex, newIndex) => ref
+                        .read(pdfTabsProvider.notifier)
+                        .reorder(oldIndex, newIndex),
+                    onAdd: () => PdfOpener.pickAndOpen(ref),
+                  ),
+                  Expanded(
+                    child: IndexedStack(
+                      index: state.activeIndex,
+                      children: [
+                        for (final tab in state.tabs)
+                          _buildDocument(context, tab),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }
