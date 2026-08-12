@@ -55,6 +55,8 @@
   "removeBookmark": "Remove bookmark",
   "bookmarks": "Bookmarks",
   "noBookmarks": "No bookmarks yet",
+  "bookmarksAndContents": "Bookmarks & contents",
+  "moreOptions": "More options",
   "bookmarkAdded": "Bookmark added",
   "bookmarkRemoved": "Bookmark removed",
   "bookmarkPage": "Page {page}",

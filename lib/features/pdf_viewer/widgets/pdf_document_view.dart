@@ -142,6 +142,15 @@ class PdfDocumentViewState extends ConsumerState<PdfDocumentView> {
   }
 
   void _openNavigation() {
+    _showNavigationSheet(initialTabIndex: 0);
+  }
+
+  void openTableOfContents() {
+    if (!hasOutline) return;
+    _showNavigationSheet(initialTabIndex: 1);
+  }
+
+  void _showNavigationSheet({required int initialTabIndex}) {
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -149,6 +158,7 @@ class PdfDocumentViewState extends ConsumerState<PdfDocumentView> {
       builder: (sheetContext) => _NavigationSheet(
         filePath: widget.filePath,
         outline: _outline,
+        initialTabIndex: initialTabIndex,
         currentPageNumber: _currentPageNumber ?? 1,
         onJumpToPage: (pageIndex) {
           Navigator.of(sheetContext).pop();
@@ -210,6 +220,16 @@ class PdfDocumentViewState extends ConsumerState<PdfDocumentView> {
     _historyPos++;
     _pdfController.goToPage(pageNumber: _history[_historyPos]);
   }
+
+  void goBack() => _goBack();
+
+  void goForward() => _goForward();
+
+  void zoomIn() => _zoomIn();
+
+  void zoomOut() => _zoomOut();
+
+  bool get hasOutline => (_outline?.isNotEmpty ?? false);
 
   Future<void> _jumpToPage() async {
     final pageCount = _pageCount;
@@ -357,18 +377,8 @@ class PdfDocumentViewState extends ConsumerState<PdfDocumentView> {
             onPrevious: _goToPreviousPage,
             onNext: _goToNextPage,
             onJump: _jumpToPage,
-            onZoomIn: _zoomIn,
-            onZoomOut: _zoomOut,
             onToggleBookmark: _toggleBookmark,
             onOpenBookmarks: _openNavigation,
-            canGoBack: canGoBack,
-            canGoForward: canGoForward,
-            onBack: _goBack,
-            onForward: _goForward,
-            onPageSliderChange: (targetPage) {
-              _pushHistoryTo(targetPage);
-              _pdfController.goToPage(pageNumber: targetPage);
-            },
           ),
       ],
     );
@@ -486,15 +496,8 @@ class _PageNavigationBar extends StatelessWidget {
   final VoidCallback onPrevious;
   final VoidCallback onNext;
   final VoidCallback onJump;
-  final VoidCallback onZoomIn;
-  final VoidCallback onZoomOut;
   final VoidCallback onToggleBookmark;
   final VoidCallback onOpenBookmarks;
-  final bool canGoBack;
-  final bool canGoForward;
-  final VoidCallback onBack;
-  final VoidCallback onForward;
-  final ValueChanged<int> onPageSliderChange;
 
   const _PageNavigationBar({
     required this.currentPage,
@@ -503,15 +506,8 @@ class _PageNavigationBar extends StatelessWidget {
     required this.onPrevious,
     required this.onNext,
     required this.onJump,
-    required this.onZoomIn,
-    required this.onZoomOut,
     required this.onToggleBookmark,
     required this.onOpenBookmarks,
-    required this.canGoBack,
-    required this.canGoForward,
-    required this.onBack,
-    required this.onForward,
-    required this.onPageSliderChange,
   });
 
   @override
@@ -552,31 +548,7 @@ class _PageNavigationBar extends StatelessWidget {
             visualDensity: VisualDensity.compact,
           ),
           const SizedBox(width: 4),
-          IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: canGoBack ? onBack : null,
-            tooltip: l10n.historyBack,
-            visualDensity: VisualDensity.compact,
-          ),
-          IconButton(
-            icon: const Icon(Icons.arrow_forward),
-            onPressed: canGoForward ? onForward : null,
-            tooltip: l10n.historyForward,
-            visualDensity: VisualDensity.compact,
-          ),
           const Spacer(),
-          IconButton(
-            icon: const Icon(Icons.zoom_out, size: 20),
-            onPressed: onZoomOut,
-            tooltip: l10n.zoomOut,
-            visualDensity: VisualDensity.compact,
-          ),
-          IconButton(
-            icon: const Icon(Icons.zoom_in, size: 20),
-            onPressed: onZoomIn,
-            tooltip: l10n.zoomIn,
-            visualDensity: VisualDensity.compact,
-          ),
           IconButton(
             icon: Icon(
               isBookmarked ? Icons.bookmark : Icons.bookmark_border,
@@ -590,7 +562,7 @@ class _PageNavigationBar extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.bookmarks_outlined, size: 20),
             onPressed: onOpenBookmarks,
-            tooltip: l10n.bookmarks,
+            tooltip: l10n.bookmarksAndContents,
             visualDensity: VisualDensity.compact,
           ),
         ],
@@ -602,6 +574,7 @@ class _PageNavigationBar extends StatelessWidget {
 class _NavigationSheet extends ConsumerStatefulWidget {
   final String filePath;
   final List<PdfOutlineNode>? outline;
+  final int initialTabIndex;
   final int currentPageNumber;
   final ValueChanged<int> onJumpToPage;
   final ValueChanged<PdfDest?> onJumpToDest;
@@ -609,6 +582,7 @@ class _NavigationSheet extends ConsumerStatefulWidget {
   const _NavigationSheet({
     required this.filePath,
     required this.outline,
+    required this.initialTabIndex,
     required this.currentPageNumber,
     required this.onJumpToPage,
     required this.onJumpToDest,
@@ -619,7 +593,14 @@ class _NavigationSheet extends ConsumerStatefulWidget {
 }
 
 class _NavigationSheetState extends ConsumerState<_NavigationSheet> {
-  int _tabIndex = 0;
+  late int _tabIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    final hasOutline = (widget.outline?.isNotEmpty ?? false);
+    _tabIndex = hasOutline ? widget.initialTabIndex : 0;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -628,8 +609,6 @@ class _NavigationSheetState extends ConsumerState<_NavigationSheet> {
     final hasOutline = (widget.outline?.isNotEmpty ?? false);
     final entries =
         ref.watch(bookmarksProvider).valueOrNull?[widget.filePath] ?? const [];
-
-    if (!hasOutline) _tabIndex = 0;
 
     return SafeArea(
       child: ConstrainedBox(

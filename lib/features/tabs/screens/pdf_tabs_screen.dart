@@ -8,6 +8,7 @@ import '../../home/recent_files_provider.dart';
 import '../../home/screens/home_screen.dart';
 import '../../pdf_viewer/widgets/pdf_document_view.dart';
 import '../../settings/invert_mode_provider.dart';
+import '../../settings/screens/settings_screen.dart';
 import '../pdf_opener.dart';
 import '../pdf_tab.dart';
 import '../pdf_tabs_provider.dart';
@@ -38,6 +39,107 @@ class _PdfTabsScreenState extends ConsumerState<PdfTabsScreen> {
       text: activeTab.displayName,
       sharePositionOrigin: box != null ? box.localToGlobal(Offset.zero) & box.size : null,
     );
+  }
+
+  List<PopupMenuEntry<String>> _overflowMenuItems(
+    BuildContext context,
+    PdfTabsState state,
+    PdfDocumentViewState? docState,
+  ) {
+    final l10n = AppLocalizations.of(context);
+    final isDarkReader = ref.watch(invertModeProvider).valueOrNull ?? false;
+    return [
+      PopupMenuItem(
+        value: 'share',
+        child: ListTile(
+          leading: const Icon(Icons.share_outlined),
+          title: Text(l10n.sharePdf),
+          contentPadding: EdgeInsets.zero,
+        ),
+      ),
+      PopupMenuItem(
+        value: 'fullscreen',
+        child: ListTile(
+          leading: const Icon(Icons.fullscreen),
+          title: Text(l10n.fullscreen),
+          contentPadding: EdgeInsets.zero,
+        ),
+      ),
+      CheckedPopupMenuItem(
+        value: 'dark_reader',
+        checked: isDarkReader,
+        child: ListTile(
+          leading: const Icon(Icons.invert_colors),
+          title: Text(l10n.darkReader),
+          contentPadding: EdgeInsets.zero,
+        ),
+      ),
+      const PopupMenuDivider(),
+      PopupMenuItem(
+        value: 'back',
+        enabled: docState?.canGoBack ?? false,
+        child: ListTile(
+          leading: const Icon(Icons.arrow_back),
+          title: Text(l10n.historyBack),
+          contentPadding: EdgeInsets.zero,
+        ),
+      ),
+      PopupMenuItem(
+        value: 'forward',
+        enabled: docState?.canGoForward ?? false,
+        child: ListTile(
+          leading: const Icon(Icons.arrow_forward),
+          title: Text(l10n.historyForward),
+          contentPadding: EdgeInsets.zero,
+        ),
+      ),
+      if (docState?.hasOutline ?? false)
+        PopupMenuItem(
+          value: 'toc',
+          child: ListTile(
+            leading: const Icon(Icons.account_tree_outlined),
+            title: Text(l10n.tableOfContents),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+      const PopupMenuDivider(),
+      PopupMenuItem(
+        value: 'settings',
+        child: ListTile(
+          leading: const Icon(Icons.settings_outlined),
+          title: Text(l10n.settings),
+          contentPadding: EdgeInsets.zero,
+        ),
+      ),
+    ];
+  }
+
+  void _onOverflowSelected(
+    BuildContext context,
+    PdfTabsState state,
+    PdfDocumentViewState? docState,
+    String value,
+  ) {
+    switch (value) {
+      case 'share':
+        _shareCurrentTab(state);
+      case 'fullscreen':
+        ref.read(fullscreenModeProvider.notifier).state = true;
+      case 'dark_reader':
+        ref.read(invertModeProvider.notifier).toggle();
+      case 'back':
+        docState?.goBack();
+      case 'forward':
+        docState?.goForward();
+      case 'toc':
+        docState?.openTableOfContents();
+      case 'settings':
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => const SettingsScreen(),
+          ),
+        );
+    }
   }
 
   Future<void> _closeTab(PdfTabsState state, String id) async {
@@ -135,30 +237,18 @@ class _PdfTabsScreenState extends ConsumerState<PdfTabsScreen> {
                     onPressed: () => _toggleSearch(state),
                     tooltip: AppLocalizations.of(context).search,
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.share_outlined),
-                    onPressed: () => _shareCurrentTab(state),
-                    tooltip: AppLocalizations.of(context).sharePdf,
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.fullscreen),
-                    onPressed: () => ref
-                        .read(fullscreenModeProvider.notifier)
-                        .state = true,
-                    tooltip: AppLocalizations.of(context).fullscreen,
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      ref.watch(invertModeProvider).valueOrNull ?? false
-                          ? Icons.invert_colors
-                          : Icons.invert_colors_off,
+                  PopupMenuButton<String>(
+                    tooltip: AppLocalizations.of(context).moreOptions,
+                    icon: const Icon(Icons.more_vert),
+                    onSelected: (value) => _onOverflowSelected(
+                      context,
+                      state,
+                      activeDocState,
+                      value,
                     ),
-                    onPressed: () => ref
-                        .read(invertModeProvider.notifier)
-                        .toggle(),
-                    tooltip: AppLocalizations.of(context).toggleDarkMode,
+                    itemBuilder: (context) =>
+                        _overflowMenuItems(context, state, activeDocState),
                   ),
-                  const ThemeToggleButton(),
                 ],
               ),
         body: isFullscreen

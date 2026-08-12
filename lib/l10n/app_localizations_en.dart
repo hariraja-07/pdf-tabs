@@ -127,6 +127,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noBookmarks => 'No bookmarks yet';
 
   @override
+  String get bookmarksAndContents => 'Bookmarks & contents';
+
+  @override
+  String get moreOptions => 'More options';
+
+  @override
   String get bookmarkAdded => 'Bookmark added';
 
   @override

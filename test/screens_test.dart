@@ -106,6 +106,63 @@ void main() {
     expect(state.activeIndex, 1);
   });
 
+  testWidgets('overflow menu exposes chrome actions and hides toc without outline',
+      (tester) async {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    await container.read(pdfTabsProvider.future);
+    await container.read(pdfTabsProvider.notifier).open('/docs/a.pdf');
+
+    Widget documentBuilder(BuildContext context, PdfTabData tab) {
+      return Center(child: Text('VIEW:${tab.fileName}'));
+    }
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: wrap(PdfTabsScreen(documentBuilder: documentBuilder)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Share PDF'), findsOneWidget);
+    expect(find.text('Fullscreen'), findsOneWidget);
+    expect(find.text('Dark reader'), findsOneWidget);
+    expect(find.text('Go back'), findsOneWidget);
+    expect(find.text('Go forward'), findsOneWidget);
+    expect(find.text('Table of contents'), findsNothing);
+    expect(find.text('Settings'), findsOneWidget);
+  });
+
+  testWidgets('settings opens from overflow menu', (tester) async {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    await container.read(pdfTabsProvider.future);
+    await container.read(pdfTabsProvider.notifier).open('/docs/a.pdf');
+
+    Widget documentBuilder(BuildContext context, PdfTabData tab) {
+      return Center(child: Text('VIEW:${tab.fileName}'));
+    }
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: wrap(PdfTabsScreen(documentBuilder: documentBuilder)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Settings'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Appearance'), findsOneWidget);
+  });
+
   testWidgets('theme toggle cycles and persists', (tester) async {
     await tester.pumpWidget(
       ProviderScope(

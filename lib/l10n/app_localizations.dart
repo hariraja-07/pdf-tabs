@@ -322,6 +322,18 @@ abstract class AppLocalizations {
   /// **'No bookmarks yet'**
   String get noBookmarks;
 
+  /// No description provided for @bookmarksAndContents.
+  ///
+  /// In en, this message translates to:
+  /// **'Bookmarks & contents'**
+  String get bookmarksAndContents;
+
+  /// No description provided for @moreOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'More options'**
+  String get moreOptions;
+
   /// No description provided for @bookmarkAdded.
   ///
   /// In en, this message translates to:
