@@ -85,6 +85,42 @@ void main() {
     expect(recents.first.filePath, '/docs/report.pdf');
   });
 
+  test('updateProgress persists last read page in recents', () async {
+    await open('/docs/report.pdf');
+
+    await container
+        .read(recentFilesProvider.notifier)
+        .updateProgress('/docs/report.pdf', 5);
+
+    final recents = await container.read(recentFilesProvider.future);
+    expect(recents.first.pageIndex, 5);
+  });
+
+  test('updateProgress ignores files not in recents', () async {
+    await container
+        .read(recentFilesProvider.notifier)
+        .updateProgress('/docs/unknown.pdf', 5);
+
+    final recents = await container.read(recentFilesProvider.future);
+    expect(recents, isEmpty);
+  });
+
+  test('open with initialPageIndex restores resume position', () async {
+    final pdf = File(
+      '${Directory.systemTemp.path}/pdf_tabs_resume_test.pdf',
+    );
+    await pdf.writeAsString('test');
+
+    await container
+        .read(pdfTabsProvider.notifier)
+        .open(pdf.path, initialPageIndex: 3);
+
+    final state = container.read(pdfTabsProvider).requireValue;
+    expect(state.tabs.single.pageIndex, 3);
+
+    await pdf.delete();
+  });
+
   test('close removes tab and reindexes active', () async {
     await open('/docs/a.pdf');
     await open('/docs/b.pdf');

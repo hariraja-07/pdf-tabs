@@ -154,4 +154,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get exitFullscreen => 'Exit fullscreen';
+
+  @override
+  String pageN(int n) {
+    return 'Page $n';
+  }
 }

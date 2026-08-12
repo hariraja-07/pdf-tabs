@@ -375,6 +375,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Exit fullscreen'**
   String get exitFullscreen;
+
+  /// No description provided for @pageN.
+  ///
+  /// In en, this message translates to:
+  /// **'Page {n}'**
+  String pageN(int n);
 }
 
 class _AppLocalizationsDelegate

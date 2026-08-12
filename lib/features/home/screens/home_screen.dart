@@ -201,7 +201,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               ),
                               subtitle: Text(
                                 exists
-                                    ? item.filePath
+                                    ? '${l10n.pageN(item.pageIndex + 1)} · ${item.filePath}'
                                     : l10n.fileNotFound,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -219,7 +219,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   ? () async {
                                       await ref
                                           .read(pdfTabsProvider.notifier)
-                                          .open(item.filePath);
+                                          .open(
+                                            item.filePath,
+                                            initialPageIndex: item.pageIndex,
+                                          );
                                     }
                                   : null,
                             ),

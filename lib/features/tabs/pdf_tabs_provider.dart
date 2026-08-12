@@ -89,7 +89,7 @@ class PdfTabsNotifier extends AsyncNotifier<PdfTabsState> {
     }
   }
 
-  Future<void> open(String filePath) async {
+  Future<void> open(String filePath, {int initialPageIndex = 0}) async {
     final fileName = _fileNameFromPath(filePath);
 
     // Register in recent files
@@ -111,6 +111,7 @@ class PdfTabsNotifier extends AsyncNotifier<PdfTabsState> {
         id: _newId(),
         filePath: filePath,
         fileName: fileName,
+        pageIndex: initialPageIndex,
       ),
     );
     await _set(PdfTabsState(tabs: tabs, activeIndex: tabs.length - 1));

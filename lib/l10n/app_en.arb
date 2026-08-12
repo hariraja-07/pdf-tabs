@@ -70,5 +70,13 @@
   "historyBack": "Go back",
   "historyForward": "Go forward",
   "fullscreen": "Fullscreen",
-  "exitFullscreen": "Exit fullscreen"
+  "exitFullscreen": "Exit fullscreen",
+  "pageN": "Page {n}",
+  "@pageN": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  }
 }

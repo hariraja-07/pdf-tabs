@@ -8,16 +8,28 @@ class RecentFileItem {
     required this.filePath,
     required this.fileName,
     required this.lastOpened,
+    this.pageIndex = 0,
   });
 
   final String filePath;
   final String fileName;
   final DateTime lastOpened;
+  final int pageIndex;
+
+  RecentFileItem copyWith({int? pageIndex}) {
+    return RecentFileItem(
+      filePath: filePath,
+      fileName: fileName,
+      lastOpened: lastOpened,
+      pageIndex: pageIndex ?? this.pageIndex,
+    );
+  }
 
   Map<String, dynamic> toJson() => {
         'filePath': filePath,
         'fileName': fileName,
         'lastOpened': lastOpened.toIso8601String(),
+        'pageIndex': pageIndex,
       };
 
   factory RecentFileItem.fromJson(Map<String, dynamic> json) {
@@ -26,6 +38,7 @@ class RecentFileItem {
       fileName: json['fileName'] as String? ?? '',
       lastOpened: DateTime.tryParse(json['lastOpened'] as String? ?? '') ??
           DateTime.now(),
+      pageIndex: json['pageIndex'] as int? ?? 0,
     );
   }
 }
@@ -73,6 +86,19 @@ class RecentFilesNotifier extends AsyncNotifier<List<RecentFileItem>> {
       updated.removeRange(_maxItems, updated.length);
     }
 
+    state = AsyncData(updated);
+    await _save(updated);
+  }
+
+  Future<void> updateProgress(String filePath, int pageIndex) async {
+    final current = await future;
+    final index = current.indexWhere((item) => item.filePath == filePath);
+    if (index < 0) return;
+    final item = current[index];
+    if (item.pageIndex == pageIndex) return;
+
+    final updated = [...current];
+    updated[index] = item.copyWith(pageIndex: pageIndex);
     state = AsyncData(updated);
     await _save(updated);
   }

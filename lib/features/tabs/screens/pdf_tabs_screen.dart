@@ -4,6 +4,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../home/recent_files_provider.dart';
 import '../../home/screens/home_screen.dart';
 import '../../pdf_viewer/widgets/pdf_document_view.dart';
 import '../pdf_opener.dart';
@@ -72,8 +73,12 @@ class _PdfTabsScreenState extends ConsumerState<PdfTabsScreen> {
       ),
       filePath: tab.filePath,
       initialPageIndex: tab.pageIndex,
-      onPageChanged: (pageIndex) =>
-          ref.read(pdfTabsProvider.notifier).setPosition(tab.id, pageIndex),
+      onPageChanged: (pageIndex) {
+        ref.read(pdfTabsProvider.notifier).setPosition(tab.id, pageIndex);
+        ref
+            .read(recentFilesProvider.notifier)
+            .updateProgress(tab.filePath, pageIndex);
+      },
     );
   }
 
