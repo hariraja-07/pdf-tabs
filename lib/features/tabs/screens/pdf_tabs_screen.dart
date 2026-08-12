@@ -7,6 +7,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../home/recent_files_provider.dart';
 import '../../home/screens/home_screen.dart';
 import '../../pdf_viewer/widgets/pdf_document_view.dart';
+import '../../settings/invert_mode_provider.dart';
 import '../pdf_opener.dart';
 import '../pdf_tab.dart';
 import '../pdf_tabs_provider.dart';
@@ -148,13 +149,13 @@ class _PdfTabsScreenState extends ConsumerState<PdfTabsScreen> {
                   ),
                   IconButton(
                     icon: Icon(
-                      ref.watch(invertModeProvider)
+                      ref.watch(invertModeProvider).valueOrNull ?? false
                           ? Icons.invert_colors
                           : Icons.invert_colors_off,
                     ),
-                    onPressed: () =>
-                        ref.read(invertModeProvider.notifier).state =
-                            !ref.read(invertModeProvider),
+                    onPressed: () => ref
+                        .read(invertModeProvider.notifier)
+                        .toggle(),
                     tooltip: AppLocalizations.of(context).toggleDarkMode,
                   ),
                   const ThemeToggleButton(),

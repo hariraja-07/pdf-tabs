@@ -78,5 +78,12 @@
         "type": "int"
       }
     }
-  }
+  },
+  "settings": "Settings",
+  "appearance": "Appearance",
+  "themeSystem": "System",
+  "themeLight": "Light",
+  "themeDark": "Dark",
+  "darkReader": "Dark reader",
+  "darkReaderDescription": "Invert PDF colors for reading in low light"
 }

@@ -4,8 +4,7 @@ import 'package:pdfrx/pdfrx.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../bookmarks/bookmarks_provider.dart';
-
-final invertModeProvider = StateProvider<bool>((ref) => false);
+import '../../settings/invert_mode_provider.dart';
 
 final fullscreenModeProvider = StateProvider<bool>((ref) => false);
 
@@ -317,7 +316,7 @@ class PdfDocumentViewState extends ConsumerState<PdfDocumentView> {
       ),
     );
 
-    if (ref.watch(invertModeProvider)) {
+    if (ref.watch(invertModeProvider).valueOrNull ?? false) {
       return ColorFiltered(
         colorFilter: const ColorFilter.matrix([
           -1, 0, 0, 0, 255,

@@ -159,4 +159,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String pageN(int n) {
     return 'Page $n';
   }
+
+  @override
+  String get settings => 'Settings';
+
+  @override
+  String get appearance => 'Appearance';
+
+  @override
+  String get themeSystem => 'System';
+
+  @override
+  String get themeLight => 'Light';
+
+  @override
+  String get themeDark => 'Dark';
+
+  @override
+  String get darkReader => 'Dark reader';
+
+  @override
+  String get darkReaderDescription =>
+      'Invert PDF colors for reading in low light';
 }
