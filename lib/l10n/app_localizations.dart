@@ -351,6 +351,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No table of contents'**
   String get noTableOfContents;
+
+  /// No description provided for @historyBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Go back'**
+  String get historyBack;
+
+  /// No description provided for @historyForward.
+  ///
+  /// In en, this message translates to:
+  /// **'Go forward'**
+  String get historyForward;
 }
 
 class _AppLocalizationsDelegate

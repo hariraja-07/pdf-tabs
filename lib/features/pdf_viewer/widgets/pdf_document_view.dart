@@ -35,6 +35,8 @@ class PdfDocumentViewState extends ConsumerState<PdfDocumentView> {
   int? _currentPageNumber;
   int? _pageCount;
   List<PdfOutlineNode>? _outline;
+  final List<int> _history = [];
+  int _historyPos = -1;
 
   bool get isSearchOpen => _isSearchOpen;
 
@@ -149,10 +151,13 @@ class PdfDocumentViewState extends ConsumerState<PdfDocumentView> {
         currentPageNumber: _currentPageNumber ?? 1,
         onJumpToPage: (pageIndex) {
           Navigator.of(sheetContext).pop();
+          _pushHistoryTo(pageIndex + 1);
           _pdfController.goToPage(pageNumber: pageIndex + 1);
         },
         onJumpToDest: (dest) {
           Navigator.of(sheetContext).pop();
+          if (dest == null) return;
+          _pushHistoryTo(dest.pageNumber);
           _pdfController.goToDest(dest);
         },
       ),
@@ -172,6 +177,37 @@ class PdfDocumentViewState extends ConsumerState<PdfDocumentView> {
       return;
     }
     _pdfController.goToPage(pageNumber: pageNumber + 1);
+  }
+
+  bool get canGoBack => _historyPos > 0;
+
+  bool get canGoForward =>
+      _historyPos >= 0 && _historyPos < _history.length - 1;
+
+  void _pushHistoryTo(int target) {
+    final current = _currentPageNumber;
+    if (current == null || current == target) return;
+    if (_historyPos < _history.length - 1) {
+      _history.removeRange(_historyPos + 1, _history.length);
+    }
+    if (_history.isEmpty || _history[_historyPos] != current) {
+      _history.add(current);
+      _historyPos++;
+    }
+    _history.add(target);
+    _historyPos++;
+  }
+
+  void _goBack() {
+    if (!canGoBack) return;
+    _historyPos--;
+    _pdfController.goToPage(pageNumber: _history[_historyPos]);
+  }
+
+  void _goForward() {
+    if (!canGoForward) return;
+    _historyPos++;
+    _pdfController.goToPage(pageNumber: _history[_historyPos]);
   }
 
   Future<void> _jumpToPage() async {
@@ -220,6 +256,7 @@ class PdfDocumentViewState extends ConsumerState<PdfDocumentView> {
     );
 
     if (result != null && mounted) {
+      _pushHistoryTo(result);
       await _pdfController.goToPage(pageNumber: result);
     }
   }
@@ -323,7 +360,12 @@ class PdfDocumentViewState extends ConsumerState<PdfDocumentView> {
             onZoomOut: _zoomOut,
             onToggleBookmark: _toggleBookmark,
             onOpenBookmarks: _openNavigation,
+            canGoBack: canGoBack,
+            canGoForward: canGoForward,
+            onBack: _goBack,
+            onForward: _goForward,
             onPageSliderChange: (targetPage) {
+              _pushHistoryTo(targetPage);
               _pdfController.goToPage(pageNumber: targetPage);
             },
           ),
@@ -447,6 +489,10 @@ class _PageNavigationBar extends StatelessWidget {
   final VoidCallback onZoomOut;
   final VoidCallback onToggleBookmark;
   final VoidCallback onOpenBookmarks;
+  final bool canGoBack;
+  final bool canGoForward;
+  final VoidCallback onBack;
+  final VoidCallback onForward;
   final ValueChanged<int> onPageSliderChange;
 
   const _PageNavigationBar({
@@ -460,6 +506,10 @@ class _PageNavigationBar extends StatelessWidget {
     required this.onZoomOut,
     required this.onToggleBookmark,
     required this.onOpenBookmarks,
+    required this.canGoBack,
+    required this.canGoForward,
+    required this.onBack,
+    required this.onForward,
     required this.onPageSliderChange,
   });
 
@@ -498,6 +548,19 @@ class _PageNavigationBar extends StatelessWidget {
             icon: const Icon(Icons.chevron_right),
             onPressed: currentPage < pageCount ? onNext : null,
             tooltip: l10n.nextPage,
+            visualDensity: VisualDensity.compact,
+          ),
+          const SizedBox(width: 4),
+          IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: canGoBack ? onBack : null,
+            tooltip: l10n.historyBack,
+            visualDensity: VisualDensity.compact,
+          ),
+          IconButton(
+            icon: const Icon(Icons.arrow_forward),
+            onPressed: canGoForward ? onForward : null,
+            tooltip: l10n.historyForward,
             visualDensity: VisualDensity.compact,
           ),
           const Spacer(),

@@ -66,5 +66,7 @@
     }
   },
   "tableOfContents": "Table of contents",
-  "noTableOfContents": "No table of contents"
+  "noTableOfContents": "No table of contents",
+  "historyBack": "Go back",
+  "historyForward": "Go forward"
 }
