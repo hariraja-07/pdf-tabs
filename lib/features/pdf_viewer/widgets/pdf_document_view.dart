@@ -539,85 +539,85 @@ class _NavigationSheetState extends ConsumerState<_NavigationSheet> {
 
     if (!hasOutline) _tabIndex = 0;
 
-    return SafeArea(
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.sizeOf(context).height * 0.7,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
-              child: Row(
-                children: [
-                  Text(
-                    l10n.bookmarks,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const Spacer(),
-                  Text(
-                    '${entries.length}',
-                    style: TextStyle(color: colorScheme.onSurfaceVariant),
-                  ),
-                ],
-              ),
+    Widget content = ConstrainedBox(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(context).height * 0.7,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+            child: Row(
+              children: [
+                Text(
+                  l10n.bookmarks,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const Spacer(),
+                Text(
+                  '${entries.length}',
+                  style: TextStyle(color: colorScheme.onSurfaceVariant),
+                ),
+              ],
             ),
-            if (hasOutline)
-              TabBar(
-                tabAlignment: TabAlignment.start,
-                isScrollable: true,
-                dividerColor: Colors.transparent,
-                indicatorColor: colorScheme.primary,
-                labelColor: colorScheme.primary,
-                unselectedLabelColor: colorScheme.onSurfaceVariant,
-                onTap: (index) => setState(() => _tabIndex = index),
-                tabs: [
-                  Tab(text: l10n.bookmarks),
-                  Tab(text: l10n.tableOfContents),
-                ],
-              ),
-            Flexible(
-              child: IndexedStack(
-                index: _tabIndex,
-                children: [
-                  _BookmarksList(
-                    filePath: widget.filePath,
+          ),
+          if (hasOutline)
+            TabBar(
+              tabAlignment: TabAlignment.start,
+              isScrollable: true,
+              dividerColor: Colors.transparent,
+              indicatorColor: colorScheme.primary,
+              labelColor: colorScheme.primary,
+              unselectedLabelColor: colorScheme.onSurfaceVariant,
+              onTap: (index) => setState(() => _tabIndex = index),
+              tabs: [
+                Tab(text: l10n.bookmarks),
+                Tab(text: l10n.tableOfContents),
+              ],
+            ),
+          Expanded(
+            child: _tabIndex == 0
+                ? _BookmarksList(
+                    entries: entries,
                     currentPageNumber: widget.currentPageNumber,
                     onJump: widget.onJumpToPage,
+                  )
+                : _OutlineList(
+                    nodes: widget.outline ?? [],
+                    onJump: widget.onJumpToDest,
                   ),
-                  if (hasOutline)
-                    _OutlineList(
-                      nodes: widget.outline!,
-                      onJump: widget.onJumpToDest,
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
+
+    if (hasOutline) {
+      content = DefaultTabController(
+        length: 2,
+        child: content,
+      );
+    }
+
+    return content;
   }
 }
 
-class _BookmarksList extends ConsumerWidget {
-  final String filePath;
+class _BookmarksList extends StatelessWidget {
+  final List<BookmarkEntry> entries;
   final int currentPageNumber;
   final ValueChanged<int> onJump;
 
   const _BookmarksList({
-    required this.filePath,
+    required this.entries,
     required this.currentPageNumber,
     required this.onJump,
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final colorScheme = Theme.of(context).colorScheme;
-    final entries =
-        ref.watch(bookmarksProvider).valueOrNull?[filePath] ?? const [];
 
     if (entries.isEmpty) {
       return Padding(
@@ -630,7 +630,6 @@ class _BookmarksList extends ConsumerWidget {
     }
 
     return ListView.builder(
-      shrinkWrap: true,
       itemCount: entries.length,
       itemBuilder: (context, index) {
         final entry = entries[index];
@@ -675,7 +674,6 @@ class _OutlineList extends StatelessWidget {
     }
 
     return ListView.builder(
-      shrinkWrap: true,
       itemCount: nodes.length,
       itemBuilder: (context, index) => _OutlineTile(
         node: nodes[index],
